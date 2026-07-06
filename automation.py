@@ -97,9 +97,11 @@ def send_report_email(report_paths, recipient=DEFAULT_RECIPIENT):
     message = EmailMessage()
     message["Subject"] = f"360 Long Runners Report - {datetime.now().strftime('%d-%b-%Y')}"
     message["From"] = sender
-    message["To"] = recipient
+    recipients = [r.strip() for r in recipient.split(",")]
+    message["To"] = ", ".join(recipients)
+    smtp.send_message(message)
     message.set_content(
-        "Hi,\n\nAttached is today's 360 Long Runners HTML report.\n\nRunBoard"
+        "Hi everyone,\n\nhe latest 360 Long Runners report has been generated automatically at 21:00 IST.\nAttached is today's 360 Long Runners HTML report.\nHappy Running!\n\nYour Chief"
     )
 
     message.add_attachment(
