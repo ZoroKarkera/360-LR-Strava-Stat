@@ -8,7 +8,7 @@ on:
     - cron: "30 15 * * *"
 
 env:
-  ENABLE_GITHUB_PAGES: "true"   # Change to "true" to publish GitHub Pages
+  ENABLE_GITHUB_PAGES: "false"   # Change to "true" to publish GitHub Pages
 
 permissions:
   contents: read
