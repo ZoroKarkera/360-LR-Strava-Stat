@@ -7,9 +7,6 @@ on:
     # 21:00 IST = 15:30 UTC
     - cron: "30 15 * * *"
 
-env:
-  ENABLE_GITHUB_PAGES: "false"   # Change to "true" to publish GitHub Pages
-
 permissions:
   contents: read
   pages: write
@@ -64,7 +61,7 @@ jobs:
             reports/*.html
 
       - name: Prepare GitHub Pages
-        if: env.ENABLE_GITHUB_PAGES == 'true'
+        if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
         run: |
           mkdir -p public
 
@@ -75,24 +72,25 @@ jobs:
           cp "$latest" public/index.html
 
       - name: Upload Pages Artifact
-        if: env.ENABLE_GITHUB_PAGES == 'true'
+        if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
   deploy:
-    if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' || env.ENABLE_GITHUB_PAGES == 'true' }}
+    if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
+
     needs: build
 
     runs-on: ubuntu-latest
 
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     permissions:
       pages: write
       id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Deploy to GitHub Pages
