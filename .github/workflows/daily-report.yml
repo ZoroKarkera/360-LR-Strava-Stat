@@ -50,7 +50,7 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
 
         run: |
-          python refresh_and_report.py --recipient "${{ secrets.SMTP_USER }}"
+          python refresh_and_report.py --recipient "${{ secrets.EMAIL_RECIPIENTS }}"
 
       - name: Upload Reports
         uses: actions/upload-artifact@v4
