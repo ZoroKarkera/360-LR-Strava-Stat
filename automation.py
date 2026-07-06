@@ -90,18 +90,34 @@ def send_report_email(report_paths, recipient=DEFAULT_RECIPIENT):
     sender = os.getenv("SMTP_FROM", smtp_user)
 
     if not all([smtp_host, smtp_user, smtp_password, sender]):
-        print("Email skipped: SMTP_HOST, SMTP_USER, SMTP_PASSWORD, and SMTP_FROM/SMTP_USER are required in .env.")
+        print(
+            "Email skipped: SMTP_HOST, SMTP_USER, SMTP_PASSWORD, and SMTP_FROM/SMTP_USER are required."
+        )
         return False
 
     dated_html = report_paths["html_dated"]
+
     message = EmailMessage()
-    message["Subject"] = f"360 Long Runners Report - {datetime.now().strftime('%d-%b-%Y')}"
+    message["Subject"] = (
+        f"🏃 360 Long Runners Report - {datetime.now().strftime('%d-%b-%Y')}"
+    )
     message["From"] = sender
-    recipients = [r.strip() for r in recipient.split(",")]
+
+    recipients = [r.strip() for r in recipient.split(",") if r.strip()]
     message["To"] = ", ".join(recipients)
-    smtp.send_message(message)
+
     message.set_content(
-        "Hi everyone,\n\nhe latest 360 Long Runners report has been generated automatically at 21:00 IST.\nAttached is today's 360 Long Runners HTML report.\nHappy Running!\n\nYour Chief"
+        """Hi everyone,
+
+The latest 360 Long Runners report has been generated automatically.
+
+📅 Date: {}
+📎 Today's HTML report is attached.
+
+Happy Running! 🏃
+
+Your Chief
+""".format(datetime.now().strftime("%d-%b-%Y"))
     )
 
     message.add_attachment(
@@ -116,9 +132,9 @@ def send_report_email(report_paths, recipient=DEFAULT_RECIPIENT):
         smtp.login(smtp_user, smtp_password)
         smtp.send_message(message)
 
-    print(f"Email sent to {recipient}: {dated_html.name}")
-    return True
+    print(f"Email sent to {', '.join(recipients)}")
 
+    return True
 
 def run_workflow(sync=True, email=True, recipient=DEFAULT_RECIPIENT, limit=100):
     app = create_app()
