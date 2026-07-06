@@ -95,7 +95,10 @@ def send_report_email(report_paths, recipient=DEFAULT_RECIPIENT):
         )
         return False
 
+    recipients = [r.strip() for r in recipient.split(",") if r.strip()]
+
     dated_html = report_paths["html_dated"]
+    excel_report = report_paths["excel"]
 
     message = EmailMessage()
     message["Subject"] = (
@@ -103,23 +106,27 @@ def send_report_email(report_paths, recipient=DEFAULT_RECIPIENT):
     )
     message["From"] = sender
 
-    recipients = [r.strip() for r in recipient.split(",") if r.strip()]
-    message["To"] = ", ".join(recipients)
+    # Keep recipients private
+    message["To"] = sender
+    message["Bcc"] = ", ".join(recipients)
 
     message.set_content(
-        """Hi everyone,
+        f"""Hey There,
 
 The latest 360 Long Runners report has been generated automatically.
 
-📅 Date: {}
-📎 Today's HTML report is attached.
+📅 Date: {datetime.now().strftime('%d-%b-%Y')}
+📎 Attached:
+• HTML Dashboard
+• Excel Report
 
 Happy Running! 🏃
 
 Your Chief
-""".format(datetime.now().strftime("%d-%b-%Y"))
+"""
     )
 
+    # Attach HTML Dashboard
     message.add_attachment(
         dated_html.read_bytes(),
         maintype="text",
@@ -127,12 +134,20 @@ Your Chief
         filename=dated_html.name,
     )
 
+    # Attach Excel Report
+    message.add_attachment(
+        excel_report.read_bytes(),
+        maintype="application",
+        subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=excel_report.name,
+    )
+
     with smtplib.SMTP(smtp_host, smtp_port) as smtp:
         smtp.starttls()
         smtp.login(smtp_user, smtp_password)
         smtp.send_message(message)
 
-    print(f"Email sent to {', '.join(recipients)}")
+    print(f"Email sent successfully to {len(recipients)} recipient(s).")
 
     return True
 
