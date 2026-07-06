@@ -2,7 +2,8 @@
 .env
 __pycache__/
 *.pyc
-data/
+data/*
+!data/club.db
 reports/
 .vscode/
 .DS_Store
