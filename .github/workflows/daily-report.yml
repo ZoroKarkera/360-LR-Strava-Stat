@@ -7,6 +7,9 @@ on:
     # 21:00 IST = 15:30 UTC
     - cron: "30 15 * * *"
 
+env:
+  ENABLE_GITHUB_PAGES: "false"   # Change to "true" to publish GitHub Pages
+
 permissions:
   contents: read
   pages: write
@@ -24,7 +27,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -48,6 +51,7 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
+
         run: |
           python refresh_and_report.py --recipient "${{ secrets.SMTP_USER }}"
 
@@ -60,10 +64,10 @@ jobs:
             reports/*.html
 
       - name: Prepare GitHub Pages
+        if: env.ENABLE_GITHUB_PAGES == 'true'
         run: |
-          mkdir public
+          mkdir -p public
 
-          # Find the latest dated dashboard
           latest=$(ls -t reports/360_Long_Runners_Dashboard_*.html | head -n1)
 
           echo "Publishing $latest"
@@ -71,11 +75,13 @@ jobs:
           cp "$latest" public/index.html
 
       - name: Upload Pages Artifact
+        if: env.ENABLE_GITHUB_PAGES == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
   deploy:
+    if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' || env.ENABLE_GITHUB_PAGES == 'true' }}
     needs: build
 
     runs-on: ubuntu-latest
