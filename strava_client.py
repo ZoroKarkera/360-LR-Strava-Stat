@@ -1,3 +1,5 @@
+from stravalib.client import Client
+from datetime import datetime
 import os
 import requests
 
@@ -39,3 +41,13 @@ def refresh_access_token(refresh_token):
         raise Exception(response.text)
 
     return response.json()
+
+def get_recent_activities(access_token, limit=30):
+
+    client = Client()
+
+    client.access_token = access_token
+
+    activities = client.get_activities(limit=limit)
+
+    return list(activities)

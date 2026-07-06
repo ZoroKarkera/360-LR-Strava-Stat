@@ -1,0 +1,18 @@
+club:
+  name: "360 Long Runners"
+
+report:
+  start_date: "2026-06-01"
+  output_directory: "reports"
+
+sync:
+  hour: 21
+  activity_limit: 100
+
+activities:
+  include:
+    - Run
+    - TrailRun
+
+dashboard:
+  recent_activities: 20

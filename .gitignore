@@ -6,3 +6,5 @@ data/
 reports/
 .vscode/
 .DS_Store
+*.pyes
+logs/

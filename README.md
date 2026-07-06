@@ -1,14 +1,5 @@
-# RunBoard
+# RunBoard v1 Template
 
-RunBoard is a local Python application that connects to the Strava API and generates:
+This template contains the project structure for the next stage.
 
-- Excel reports
-- HTML dashboards
-- Weekly leaderboards
-- Runner statistics
-
-## Status
-
-✅ OAuth authentication completed
-
-🚧 Activity synchronization in progress
+Copy the files into your project and adapt imports as needed.
