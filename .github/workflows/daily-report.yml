@@ -7,6 +7,15 @@ on:
     # 21:00 IST = 15:30 UTC
     - cron: "30 15 * * *"
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   generate-report:
     runs-on: ubuntu-latest
@@ -39,6 +48,45 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
-
         run: |
           python refresh_and_report.py --recipient "${{ secrets.SMTP_USER }}"
+
+      # Upload Excel + HTML as downloadable artifacts
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: 360-Long-Runners-Report
+          path: |
+            reports/*.xlsx
+            reports/*.html
+
+      # Prepare GitHub Pages
+      - name: Prepare GitHub Pages
+        run: |
+          mkdir -p public
+
+          # Copy the latest dashboard as the website homepage
+          cp reports/360_Long_Runners_Dashboard.html public/index.html
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy-pages:
+    needs: generate-report
+
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
