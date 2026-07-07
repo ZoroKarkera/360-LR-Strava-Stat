@@ -1,16 +1,19 @@
 from stravalib.client import Client
-from datetime import datetime
-import os
 import requests
+
+from strava_config import get_authorization_credentials
 
 
 def exchange_code_for_token(code):
+    app_name, credentials = get_authorization_credentials()
+
+    print(f"Authorizing new athlete using {app_name}...")
 
     response = requests.post(
         "https://www.strava.com/oauth/token",
         data={
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
+            "client_id": credentials["client_id"],
+            "client_secret": credentials["client_secret"],
             "code": code,
             "grant_type": "authorization_code",
         },
@@ -27,7 +30,6 @@ def refresh_access_token(
     client_id,
     client_secret,
 ):
-
     response = requests.post(
         "https://www.strava.com/oauth/token",
         data={
@@ -43,12 +45,8 @@ def refresh_access_token(
 
     return response.json()
 
+
 def get_recent_activities(access_token, limit=30):
-
     client = Client()
-
     client.access_token = access_token
-
-    activities = client.get_activities(limit=limit)
-
-    return list(activities)
+    return list(client.get_activities(limit=limit))

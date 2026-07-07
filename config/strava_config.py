@@ -46,3 +46,13 @@ def get_credentials(firstname):
         raise ValueError(f"Unknown Strava app '{app}'")
 
     return app, credentials
+
+def get_authorization_credentials():
+    app_name = CONFIG["default_authorization_app"]
+
+    credentials = STRAVA_APPS.get(app_name)
+
+    if credentials is None:
+        raise ValueError(f"Unknown authorization app '{app_name}'")
+
+    return app_name, credentials

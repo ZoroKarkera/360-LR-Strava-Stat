@@ -1,3 +1,5 @@
+default_authorization_app: app1
+
 apps:
 
   app1:
