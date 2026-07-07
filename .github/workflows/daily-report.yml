@@ -63,6 +63,8 @@ jobs:
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
           CLIENT_ID_APP2: ${{ secrets.CLIENT_ID_APP2 }}
           CLIENT_SECRET_APP2: ${{ secrets.CLIENT_SECRET_APP2 }}
+          CLIENT_ID_APP3: ${{ secrets.CLIENT_ID_APP3 }}
+          CLIENT_SECRET_APP3: ${{ secrets.CLIENT_SECRET_APP3 }}
           REDIRECT_URI: ${{ secrets.REDIRECT_URI }}
 
           SMTP_HOST: ${{ secrets.SMTP_HOST }}

@@ -17,3 +17,6 @@ apps:
 
   app2:
     athletes: []
+  
+  app3:
+    athletes: []

@@ -24,6 +24,10 @@ STRAVA_APPS = {
         "client_id": os.getenv("CLIENT_ID_APP2"),
         "client_secret": os.getenv("CLIENT_SECRET_APP2"),
     },
+    "app3": {
+        "client_id": os.getenv("CLIENT_ID_APP3"),
+        "client_secret": os.getenv("CLIENT_SECRET_APP3"),
+    },
 }
 
 
@@ -48,11 +52,24 @@ def get_credentials(firstname):
     return app, credentials
 
 def get_authorization_credentials():
-    app_name = CONFIG["default_authorization_app"]
+
+    override = os.getenv("AUTHORIZATION_APP_OVERRIDE")
+
+    if override:
+        app_name = override
+        print(f"Using authorization app override: {app_name}")
+    else:
+        app_name = CONFIG["default_authorization_app"]
+        print(f"Using default authorization app: {app_name}")
 
     credentials = STRAVA_APPS.get(app_name)
 
     if credentials is None:
-        raise ValueError(f"Unknown authorization app '{app_name}'")
+        available = ", ".join(STRAVA_APPS.keys())
+
+        raise ValueError(
+            f"Unknown Strava app '{app_name}'. "
+            f"Available apps: {available}"
+        )
 
     return app_name, credentials
