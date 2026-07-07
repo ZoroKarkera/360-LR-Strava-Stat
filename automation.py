@@ -5,7 +5,7 @@ from datetime import datetime
 from email.message import EmailMessage
 from pathlib import Path
 import smtplib
-from config.strava_config import get_credentials
+from settings.strava_config import get_credentials
 
 from dotenv import load_dotenv
 from flask import Flask
