@@ -1,19 +1,24 @@
 from flask import redirect, request
-from models import Athlete
+
 from database import db
+from models import Athlete
 from strava_client import exchange_code_for_token
+from settings.strava_config import get_authorization_credentials
 
 import os
 
-CLIENT_ID = os.getenv("CLIENT_ID")
 REDIRECT_URI = os.getenv("REDIRECT_URI")
 
 
 def login():
 
+    app_name, credentials = get_authorization_credentials()
+
+    print(f"Authorizing new athlete using {app_name}...")
+
     url = (
         "https://www.strava.com/oauth/authorize"
-        f"?client_id={CLIENT_ID}"
+        f"?client_id={credentials['client_id']}"
         f"&redirect_uri={REDIRECT_URI}"
         "&response_type=code"
         "&approval_prompt=force"
@@ -26,6 +31,9 @@ def login():
 def callback():
 
     code = request.args.get("code")
+
+    # Determine which Strava App is currently being used
+    app_name, _ = get_authorization_credentials()
 
     token = exchange_code_for_token(code)
 
@@ -60,7 +68,17 @@ def callback():
 
         <p><b>Athlete ID:</b> {athlete.athlete_id}</p>
 
+        <p><b>Authorized using:</b> {app_name}</p>
+
         <p>Your credentials have been stored in the database.</p>
+
+        <hr>
+
+        <h3>Next Step</h3>
+
+        <p>Add <b>{athlete.firstname}</b> to the appropriate application in:</p>
+
+        <pre>settings/strava_apps.yml</pre>
 
         </body>
     </html>

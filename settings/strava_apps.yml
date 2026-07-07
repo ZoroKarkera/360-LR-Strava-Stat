@@ -1,0 +1,22 @@
+default_authorization_app: app1
+
+apps:
+
+  app1:
+    athletes:
+      - Chirag
+      - Vivek
+      - Ralph
+      - Vijay
+      - Abhilash
+      - Vinukumar
+      - Sukesh
+      - Sourabh
+      - Sarangi
+      - Maran
+
+  app2:
+    athletes: []
+  
+  app3:
+    athletes: []
