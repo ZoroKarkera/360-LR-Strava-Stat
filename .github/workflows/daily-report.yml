@@ -2,6 +2,18 @@ name: Daily Strava Report
 
 on:
   workflow_dispatch:
+    inputs:
+      send_email_to_club:
+        description: "Send email to all club members"
+        required: true
+        default: true
+        type: boolean
+
+      deploy_pages:
+        description: "Deploy GitHub Pages"
+        required: true
+        default: true
+        type: boolean
 
   schedule:
     # 21:00 IST = 15:30 UTC
@@ -12,12 +24,8 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  build:
+  generate-report:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,6 +45,18 @@ jobs:
       - name: Create data directory
         run: mkdir -p data
 
+      - name: Determine email recipients
+        id: recipients
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "recipient=${{ secrets.EMAIL_RECIPIENTS }}" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.send_email_to_club }}" = "true" ]; then
+            echo "recipient=${{ secrets.EMAIL_RECIPIENTS }}" >> $GITHUB_OUTPUT
+          else
+            echo "recipient=${{ secrets.SMTP_USER }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Strava Report
         env:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
@@ -50,48 +70,44 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
 
         run: |
-          python refresh_and_report.py --recipient "${{ secrets.EMAIL_RECIPIENTS }}"
+          python refresh_and_report.py \
+            --recipient "${{ steps.recipients.outputs.recipient }}"
 
-      - name: Upload Reports
+      - name: Upload Excel Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 360-Long-Runners-Report
-          path: |
-            reports/*.xlsx
-            reports/*.html
+          name: strava-excel-report
+          path: reports/360_Long_Runners_Report.xlsx
+          retention-days: 30
 
-      - name: Prepare GitHub Pages
-        if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
+      - name: Upload HTML Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: strava-html-dashboard
+          path: reports/360_Long_Runners_Dashboard.html
+          retention-days: 30
+
+      - name: Copy dashboard to repository root
         run: |
-          mkdir -p public
+          cp reports/360_Long_Runners_Dashboard.html ./index.html
 
-          latest=$(ls -t reports/360_Long_Runners_Dashboard_*.html | head -n1)
-
-          echo "Publishing $latest"
-
-          cp "$latest" public/index.html
+      - name: Configure GitHub Pages
+        if: |
+          github.event_name == 'schedule' ||
+          inputs.deploy_pages == true
+        uses: actions/configure-pages@v5
 
       - name: Upload Pages Artifact
-        if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
+        if: |
+          github.event_name == 'schedule' ||
+          inputs.deploy_pages == true
         uses: actions/upload-pages-artifact@v3
         with:
-          path: public
+          path: .
 
-  deploy:
-    if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
-    needs: build
-
-    runs-on: ubuntu-latest
-
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
       - name: Deploy to GitHub Pages
+        if: |
+          github.event_name == 'schedule' ||
+          inputs.deploy_pages == true
         id: deployment
         uses: actions/deploy-pages@v4
