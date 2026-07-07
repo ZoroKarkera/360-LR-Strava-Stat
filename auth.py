@@ -32,6 +32,9 @@ def callback():
 
     code = request.args.get("code")
 
+    # Determine which Strava App is currently being used
+    app_name, _ = get_authorization_credentials()
+
     token = exchange_code_for_token(code)
 
     athlete_json = token["athlete"]
@@ -65,9 +68,17 @@ def callback():
 
         <p><b>Athlete ID:</b> {athlete.athlete_id}</p>
 
+        <p><b>Authorized using:</b> {app_name}</p>
+
         <p>Your credentials have been stored in the database.</p>
 
-        <p><b>Authorized using:</b> {app_name}</p>
+        <hr>
+
+        <h3>Next Step</h3>
+
+        <p>Add <b>{athlete.firstname}</b> to the appropriate application in:</p>
+
+        <pre>settings/strava_apps.yml</pre>
 
         </body>
     </html>
