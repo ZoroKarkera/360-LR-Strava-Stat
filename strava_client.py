@@ -3,9 +3,6 @@ from datetime import datetime
 import os
 import requests
 
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-
 
 def exchange_code_for_token(code):
 
@@ -25,13 +22,17 @@ def exchange_code_for_token(code):
     return response.json()
 
 
-def refresh_access_token(refresh_token):
+def refresh_access_token(
+    refresh_token,
+    client_id,
+    client_secret,
+):
 
     response = requests.post(
         "https://www.strava.com/oauth/token",
         data={
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
+            "client_id": client_id,
+            "client_secret": client_secret,
             "grant_type": "refresh_token",
             "refresh_token": refresh_token,
         },

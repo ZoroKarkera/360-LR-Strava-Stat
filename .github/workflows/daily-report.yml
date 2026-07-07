@@ -61,6 +61,8 @@ jobs:
         env:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          CLIENT_ID_APP2: ${{ secrets.CLIENT_ID_APP2 }}
+          CLIENT_SECRET_APP2: ${{ secrets.CLIENT_SECRET_APP2 }}
           REDIRECT_URI: ${{ secrets.REDIRECT_URI }}
 
           SMTP_HOST: ${{ secrets.SMTP_HOST }}

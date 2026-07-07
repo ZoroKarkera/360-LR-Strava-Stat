@@ -5,6 +5,7 @@ from datetime import datetime
 from email.message import EmailMessage
 from pathlib import Path
 import smtplib
+from strava_config import get_credentials
 
 from dotenv import load_dotenv
 from flask import Flask
@@ -54,8 +55,17 @@ def ensure_fresh_token(athlete):
         print(f"Skipping token refresh for {athlete.firstname}: no refresh token.")
         return
 
-    print(f"Refreshing Strava token for {athlete.firstname}...")
-    token = refresh_access_token(athlete.refresh_token)
+    app_name, credentials = get_credentials(athlete.firstname)
+    
+    print(
+        f"Refreshing Strava token for {athlete.firstname} ({app_name})..."
+    )
+    
+    token = refresh_access_token(
+        athlete.refresh_token,
+        credentials["client_id"],
+        credentials["client_secret"],
+    )
 
     athlete.access_token = token["access_token"]
     athlete.refresh_token = token["refresh_token"]
