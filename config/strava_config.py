@@ -4,7 +4,7 @@ from pathlib import Path
 import yaml
 
 
-CONFIG_FILE = Path(__file__).parent / "config" / "strava_apps.yml"
+CONFIG_FILE = Path(__file__).parent / "strava_apps.yml"
 
 
 def load_config():
