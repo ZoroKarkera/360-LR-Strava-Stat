@@ -1,7 +1,7 @@
 from stravalib.client import Client
 import requests
 
-from strava_config import get_authorization_credentials
+from config.strava_config import get_authorization_credentials
 
 
 def exchange_code_for_token(code):

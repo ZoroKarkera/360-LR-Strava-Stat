@@ -3,7 +3,7 @@ from flask import redirect, request
 from database import db
 from models import Athlete
 from strava_client import exchange_code_for_token
-from strava_config import get_authorization_credentials
+from config.strava_config import get_authorization_credentials
 
 import os
 
