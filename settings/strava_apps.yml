@@ -16,7 +16,9 @@ apps:
       - Maran
 
   app2:
-    athletes: []
+    athletes:
+      - Priyadarshini 
+      - Sujeetha
   
   app3:
     athletes: []
