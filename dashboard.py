@@ -1,5 +1,7 @@
 import html
 import os
+from datetime import timezone, timedelta
+from datetime import datetime as dt
 
 from models import Activity, Athlete
 from statistics import (
@@ -15,6 +17,10 @@ from statistics import (
 REPORT_DIR = "reports"
 HTML_FILE = "360_Long_Runners_Dashboard.html"
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+
+def to_ist(dt_utc):
+    return dt_utc.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=5, minutes=30)))
 
 
 def generate_dashboard(filename=None):
@@ -61,6 +67,9 @@ def render_dashboard(
     max_heatmap_value = max(
         [heatmap[runner].get(day, 0) for runner in heatmap for day in DAYS] or [0]
     )
+
+    IST = timezone(timedelta(hours=5, minutes=30))
+    generated_at = dt.now(IST).strftime("%d %b %Y, %I:%M %p IST")
 
     return f"""<!doctype html>
 <html lang="en">
@@ -127,7 +136,7 @@ def render_dashboard(
     .generated {{
       color: #d9e8f5;
       font-size: 13px;
-      white-space: nowrap;
+      margin-top: 6px;
     }}
 
     section {{
@@ -142,7 +151,7 @@ def render_dashboard(
 
     .summary {{
       display: grid;
-      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
       gap: 12px;
     }}
 
@@ -233,11 +242,6 @@ def render_dashboard(
         display: block;
       }}
 
-      .generated {{
-        margin-top: 14px;
-        white-space: normal;
-      }}
-
       .summary {{
         grid-template-columns: repeat(2, minmax(140px, 1fr));
       }}
@@ -257,9 +261,9 @@ def render_dashboard(
     <header>
       <div>
         <h1>360 Long Runners</h1>
-        <p>{escape(date_range)}</p>
+        <p>Strava data from {escape(date_range)}</p>
+        <p class="generated">Last updated: {generated_at}</p>
       </div>
-      <div class="generated">Generated from Strava club activity data</div>
     </header>
 
     <section>
@@ -302,7 +306,6 @@ def summary_cards(summary):
         ("Runs", summary["runs"]),
         ("Members", summary["runners"]),
         ("Elevation", f"{summary['elevation']:.0f} m"),
-        ("Avg HR", summary["avg_hr"] or "-"),
     ]
 
     return "\n".join(
@@ -440,9 +443,30 @@ def get_achievements(leaderboard, start_date=None):
 
     longest_run = max(activities, key=lambda item: item.distance or 0)
     highest_elevation = max(activities, key=lambda item: item.total_elevation_gain or 0)
-    hr_activities = [activity for activity in activities if activity.average_heartrate]
-    lowest_hr = min(hr_activities, key=lambda item: item.average_heartrate) if hr_activities else None
     most_runs = max(leaderboard, key=lambda item: item["runs"]) if leaderboard else None
+
+    def best_effort(target_m, margin_m):
+        candidates = [
+            a for a in activities
+            if a.distance and a.moving_time
+            and abs(a.distance - target_m) <= margin_m
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda a: a.moving_time / (a.distance / 1000))
+
+    def format_effort_time(activity, target_m):
+        pace_sec = activity.moving_time / (activity.distance / 1000)
+        total_sec = int(round(pace_sec * (target_m / 1000)))
+        mins, secs = divmod(total_sec, 60)
+        hours, mins = divmod(mins, 60)
+        if hours:
+            return f"{hours}:{mins:02d}:{secs:02d}"
+        return f"{mins}:{secs:02d}"
+
+    fastest_5k = best_effort(5000, 500)
+    fastest_10k = best_effort(10000, 500)
+    fastest_21k = best_effort(21097, 1000)
 
     achievements = [
         {
@@ -462,14 +486,24 @@ def get_achievements(leaderboard, start_date=None):
         },
     ]
 
-    if lowest_hr:
-        achievements.append(
-            {
-                "metric": "Lowest Average HR",
-                "winner": runner_name(lowest_hr),
-                "value": f"{lowest_hr.average_heartrate:.1f} bpm",
-            }
-        )
+    if fastest_5k:
+        achievements.append({
+            "metric": "Fastest 5k",
+            "winner": runner_name(fastest_5k),
+            "value": format_effort_time(fastest_5k, 5000),
+        })
+    if fastest_10k:
+        achievements.append({
+            "metric": "Fastest 10k",
+            "winner": runner_name(fastest_10k),
+            "value": format_effort_time(fastest_10k, 10000),
+        })
+    if fastest_21k:
+        achievements.append({
+            "metric": "Fastest 21k",
+            "winner": runner_name(fastest_21k),
+            "value": format_effort_time(fastest_21k, 21097),
+        })
 
     return achievements
 
@@ -482,14 +516,14 @@ def get_date_range_label(report_start):
         .first()
     )
 
-    start_label = report_start.strftime("%d-%b-%Y")
+    start_label = report_start.strftime("%d/%b")
 
     if not last_activity:
-        return f"{start_label} to today"
+        return f"{start_label} to {dt.now(timezone(timedelta(hours=5, minutes=30))).strftime('%d/%b')}"
 
     return (
         f"{start_label} to "
-        f"{last_activity.start_date.strftime('%d-%b-%Y')}"
+        f"{to_ist(last_activity.start_date).strftime('%d/%b')}"
     )
 
 

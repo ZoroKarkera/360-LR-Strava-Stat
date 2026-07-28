@@ -1,5 +1,7 @@
 import html
 import os
+from datetime import timezone, timedelta
+from datetime import datetime as dt
 
 from models import Activity, Athlete
 from statistics import (
@@ -17,6 +19,10 @@ HTML_FILE = "360_Long_Runners_Dashboard.html"
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
+def to_ist(dt_utc):
+    return dt_utc.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=5, minutes=30)))
+
+
 def generate_dashboard(filename=None):
     """Generate a self-contained HTML dashboard and return the saved path."""
     output_path = filename or os.path.join(REPORT_DIR, HTML_FILE)
@@ -31,6 +37,7 @@ def generate_dashboard(filename=None):
     recent_runs = get_recent_runs(limit=20, start_date=report_start)
     achievements = get_achievements(leaderboard, start_date=report_start)
     date_range = get_date_range_label(report_start)
+    generated_at = dt.now(timezone(timedelta(hours=5, minutes=30))).strftime("%d %b %Y, %I:%M %p IST")
 
     html_text = render_dashboard(
         summary=summary,
@@ -39,6 +46,7 @@ def generate_dashboard(filename=None):
         recent_runs=recent_runs,
         achievements=achievements,
         date_range=date_range,
+      generated_at=generated_at,
         week_start=week_start,
     )
 
@@ -56,6 +64,7 @@ def render_dashboard(
     recent_runs,
     achievements,
     date_range,
+  generated_at,
     week_start,
 ):
     max_heatmap_value = max(
@@ -127,7 +136,7 @@ def render_dashboard(
     .generated {{
       color: #d9e8f5;
       font-size: 13px;
-      white-space: nowrap;
+      margin-top: 6px;
     }}
 
     section {{
@@ -257,9 +266,9 @@ def render_dashboard(
     <header>
       <div>
         <h1>360 Long Runners</h1>
-        <p>{escape(date_range)}</p>
+        <p>Strava data from {escape(date_range)}</p>
+        <p class="generated">Last updated: {generated_at}</p>
       </div>
-      <div class="generated">Generated from Strava club activity data</div>
     </header>
 
     <section>
@@ -456,14 +465,14 @@ def get_date_range_label(report_start):
         .first()
     )
 
-    start_label = report_start.strftime("%d-%b-%Y")
+    start_label = report_start.strftime("%d/%b")
 
     if not last_activity:
-        return f"{start_label} to today"
+        return f"{start_label} to {dt.now(timezone(timedelta(hours=5, minutes=30))).strftime('%d/%b')}"
 
     return (
         f"{start_label} to "
-        f"{last_activity.start_date.strftime('%d-%b-%Y')}"
+        f"{to_ist(last_activity.start_date).strftime('%d/%b')}"
     )
 
 
