@@ -132,7 +132,7 @@ def render_dashboard(
     .generated {{
       color: #d9e8f5;
       font-size: 13px;
-      white-space: nowrap;
+      margin-top: 6px;
     }}
 
     section {{
@@ -238,11 +238,6 @@ def render_dashboard(
         display: block;
       }}
 
-      .generated {{
-        margin-top: 14px;
-        white-space: normal;
-      }}
-
       .summary {{
         grid-template-columns: repeat(2, minmax(140px, 1fr));
       }}
@@ -262,9 +257,9 @@ def render_dashboard(
     <header>
       <div>
         <h1>360 Long Runners</h1>
-        <p>{escape(date_range)}</p>
+        <p>Strava data from {escape(date_range)}</p>
+        <p class="generated">Last updated: {generated_at}</p>
       </div>
-      <div class="generated">Last updated: {generated_at}</div>
     </header>
 
     <section>
