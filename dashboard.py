@@ -19,6 +19,10 @@ HTML_FILE = "360_Long_Runners_Dashboard.html"
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
+def to_ist(dt_utc):
+    return dt_utc.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=5, minutes=30)))
+
+
 def generate_dashboard(filename=None):
     """Generate a self-contained HTML dashboard and return the saved path."""
     output_path = filename or os.path.join(REPORT_DIR, HTML_FILE)
@@ -512,14 +516,14 @@ def get_date_range_label(report_start):
         .first()
     )
 
-    start_label = report_start.strftime("%d-%b-%Y")
+    start_label = report_start.strftime("%d/%b").lower()
 
     if not last_activity:
-        return f"{start_label} to today"
+        return f"{start_label} to {dt.now(timezone(timedelta(hours=5, minutes=30))).strftime('%d/%b').lower()}"
 
     return (
         f"{start_label} to "
-        f"{last_activity.start_date.strftime('%d-%b-%Y')}"
+        f"{to_ist(last_activity.start_date).strftime('%d/%b').lower()}"
     )
 
 
