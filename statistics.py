@@ -1,7 +1,14 @@
 from collections import defaultdict
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, timezone
 
 from models import Activity, Athlete
+
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def to_ist(dt_utc):
+    """Convert a naive UTC datetime (as stored by Strava) to IST."""
+    return dt_utc.replace(tzinfo=timezone.utc).astimezone(IST)
 
 
 REPORT_START_MONTH = 6
@@ -20,7 +27,7 @@ def get_report_start_date(reference_date=None):
 
 
 def get_current_week_start(reference_date=None):
-    reference_date = reference_date or datetime.now()
+    reference_date = reference_date or datetime.now(IST)
     week_start = reference_date.date() - timedelta(days=reference_date.weekday())
     return datetime.combine(week_start, time.min)
 
@@ -94,7 +101,7 @@ def get_recent_runs(limit=20, start_date=None, end_date=None):
 
         rows.append(
             {
-                "date": activity.start_date.strftime("%d-%b"),
+                "date": to_ist(activity.start_date).strftime("%d-%b"),
                 "runner": athlete.firstname if athlete else "Unknown",
                 "activity": activity.name,
                 "distance": round((activity.distance or 0) / 1000, 2),
@@ -115,7 +122,7 @@ def get_heatmap(start_date=None, end_date=None):
     for activity in activities:
         athlete = Athlete.query.get(activity.athlete_id)
         runner = athlete.firstname if athlete else "Unknown"
-        day = activity.start_date.strftime("%a")
+        day = to_ist(activity.start_date).strftime("%a")
         heatmap[runner][day] += (activity.distance or 0) / 1000
 
     return heatmap
