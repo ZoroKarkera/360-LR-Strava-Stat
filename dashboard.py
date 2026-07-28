@@ -1,5 +1,7 @@
 import html
 import os
+from datetime import timezone, timedelta
+from datetime import datetime as dt
 
 from models import Activity, Athlete
 from statistics import (
@@ -61,6 +63,9 @@ def render_dashboard(
     max_heatmap_value = max(
         [heatmap[runner].get(day, 0) for runner in heatmap for day in DAYS] or [0]
     )
+
+    IST = timezone(timedelta(hours=5, minutes=30))
+    generated_at = dt.now(IST).strftime("%d %b %Y, %I:%M %p IST")
 
     return f"""<!doctype html>
 <html lang="en">
@@ -142,7 +147,7 @@ def render_dashboard(
 
     .summary {{
       display: grid;
-      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
       gap: 12px;
     }}
 
@@ -259,7 +264,7 @@ def render_dashboard(
         <h1>360 Long Runners</h1>
         <p>{escape(date_range)}</p>
       </div>
-      <div class="generated">Generated from Strava club activity data</div>
+      <div class="generated">Last updated: {generated_at}</div>
     </header>
 
     <section>
