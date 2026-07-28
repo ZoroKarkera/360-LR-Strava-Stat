@@ -302,7 +302,6 @@ def summary_cards(summary):
         ("Runs", summary["runs"]),
         ("Members", summary["runners"]),
         ("Elevation", f"{summary['elevation']:.0f} m"),
-        ("Avg HR", summary["avg_hr"] or "-"),
     ]
 
     return "\n".join(
@@ -440,9 +439,30 @@ def get_achievements(leaderboard, start_date=None):
 
     longest_run = max(activities, key=lambda item: item.distance or 0)
     highest_elevation = max(activities, key=lambda item: item.total_elevation_gain or 0)
-    hr_activities = [activity for activity in activities if activity.average_heartrate]
-    lowest_hr = min(hr_activities, key=lambda item: item.average_heartrate) if hr_activities else None
     most_runs = max(leaderboard, key=lambda item: item["runs"]) if leaderboard else None
+
+    def best_effort(target_m, margin_m):
+        candidates = [
+            a for a in activities
+            if a.distance and a.moving_time
+            and abs(a.distance - target_m) <= margin_m
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda a: a.moving_time / (a.distance / 1000))
+
+    def format_effort_time(activity, target_m):
+        pace_sec = activity.moving_time / (activity.distance / 1000)
+        total_sec = int(round(pace_sec * (target_m / 1000)))
+        mins, secs = divmod(total_sec, 60)
+        hours, mins = divmod(mins, 60)
+        if hours:
+            return f"{hours}:{mins:02d}:{secs:02d}"
+        return f"{mins}:{secs:02d}"
+
+    fastest_5k = best_effort(5000, 500)
+    fastest_10k = best_effort(10000, 500)
+    fastest_21k = best_effort(21097, 1000)
 
     achievements = [
         {
@@ -462,14 +482,24 @@ def get_achievements(leaderboard, start_date=None):
         },
     ]
 
-    if lowest_hr:
-        achievements.append(
-            {
-                "metric": "Lowest Average HR",
-                "winner": runner_name(lowest_hr),
-                "value": f"{lowest_hr.average_heartrate:.1f} bpm",
-            }
-        )
+    if fastest_5k:
+        achievements.append({
+            "metric": "Fastest 5k",
+            "winner": runner_name(fastest_5k),
+            "value": format_effort_time(fastest_5k, 5000),
+        })
+    if fastest_10k:
+        achievements.append({
+            "metric": "Fastest 10k",
+            "winner": runner_name(fastest_10k),
+            "value": format_effort_time(fastest_10k, 10000),
+        })
+    if fastest_21k:
+        achievements.append({
+            "metric": "Fastest 21k",
+            "winner": runner_name(fastest_21k),
+            "value": format_effort_time(fastest_21k, 21097),
+        })
 
     return achievements
 
