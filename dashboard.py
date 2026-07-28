@@ -17,10 +17,16 @@ from statistics import (
 REPORT_DIR = "reports"
 HTML_FILE = "360_Long_Runners_Dashboard.html"
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+IST = timezone(timedelta(hours=5, minutes=30))
 
 
 def to_ist(dt_utc):
-    return dt_utc.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=5, minutes=30)))
+  return dt_utc.replace(tzinfo=timezone.utc).astimezone(IST)
+
+
+def should_show_standby_note(now_ist=None):
+  now_ist = now_ist or dt.now(IST)
+  return now_ist.weekday() == 6 and now_ist.hour >= 13
 
 
 def generate_dashboard(filename=None):
@@ -224,6 +230,30 @@ def render_dashboard(
       border-left: 1px solid #edf1f5;
     }}
 
+    .runner-cell {{
+      white-space: nowrap;
+    }}
+
+    .zero-run-badge {{
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #475467;
+      background: #eef2f6;
+      border: 1px solid #d0d8e2;
+      vertical-align: middle;
+    }}
+
+    .zero-run-note {{
+      margin-left: 8px;
+      font-size: 12px;
+      color: #6a7280;
+      font-style: italic;
+    }}
+
     .activity {{
       max-width: 320px;
     }}
@@ -340,6 +370,7 @@ def heatmap_table(heatmap, max_value):
         return '<div class="empty">No heatmap data yet.</div>'
 
     rows = []
+    show_standby_note = should_show_standby_note()
 
     athletes = (
         Athlete.query
@@ -348,33 +379,30 @@ def heatmap_table(heatmap, max_value):
     )
 
     for athlete in athletes:
-
         runner = athlete.firstname
         total = 0
-
-        cells = [f"<td>{escape(runner)}</td>"]
+        cells = []
 
         for day in DAYS:
-
             distance = round(
                 heatmap.get(runner, {}).get(day, 0),
                 1
             )
-
             total += distance
-
             cells.append(
                 f'<td class="heat" style="{heat_style(distance, max_value)}">'
                 f"{distance:.1f}</td>"
             )
 
-        cells.append(
-            f'<td class="number">{total:.1f} km</td>'
-        )
+        runner_label = escape(runner)
+        if total == 0:
+            runner_label += '<span class="zero-run-badge">RS</span>'
+            if show_standby_note:
+                runner_label += '<span class="zero-run-note">Running shoes on standby</span>'
 
-        rows.append(
-            "<tr>" + "".join(cells) + "</tr>"
-        )
+        cells.insert(0, f'<td class="runner-cell">{runner_label}</td>')
+        cells.append(f'<td class="number">{total:.1f} km</td>')
+        rows.append("<tr>" + "".join(cells) + "</tr>")
 
     return (
         '<div class="table-wrap">'
