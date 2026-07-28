@@ -516,14 +516,14 @@ def get_date_range_label(report_start):
         .first()
     )
 
-    start_label = report_start.strftime("%d/%b").lower()
+    start_label = report_start.strftime("%d/%b")
 
     if not last_activity:
-        return f"{start_label} to {dt.now(timezone(timedelta(hours=5, minutes=30))).strftime('%d/%b').lower()}"
+        return f"{start_label} to {dt.now(timezone(timedelta(hours=5, minutes=30))).strftime('%d/%b')}"
 
     return (
         f"{start_label} to "
-        f"{to_ist(last_activity.start_date).strftime('%d/%b').lower()}"
+        f"{to_ist(last_activity.start_date).strftime('%d/%b')}"
     )
 
 
