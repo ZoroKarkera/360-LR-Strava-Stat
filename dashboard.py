@@ -234,6 +234,55 @@ def render_dashboard(
       white-space: nowrap;
     }}
 
+    .runner-active .runner-cell {{
+      background: #eef9f1;
+    }}
+
+    .runner-idle .runner-cell {{
+      background: #fff2f1;
+    }}
+
+    .runner-name-active {{
+      color: #1f7a4b;
+      font-weight: 700;
+    }}
+
+    .runner-name-idle {{
+      color: #9f2f2f;
+      font-weight: 700;
+    }}
+
+    .status-legend {{
+      margin-bottom: 8px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: #5b6470;
+    }}
+
+    .legend-item {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }}
+
+    .legend-dot {{
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      display: inline-block;
+      border: 1px solid transparent;
+    }}
+
+    .legend-active {{
+      background: #2e945c;
+    }}
+
+    .legend-idle {{
+      background: #cc4b37;
+    }}
+
     .zero-run-badge {{
       display: inline-block;
       margin-left: 6px;
@@ -241,9 +290,9 @@ def render_dashboard(
       border-radius: 999px;
       font-size: 11px;
       font-weight: 700;
-      color: #475467;
-      background: #eef2f6;
-      border: 1px solid #d0d8e2;
+      color: #8a2f22;
+      background: #ffe9e6;
+      border: 1px solid #f2b8af;
       vertical-align: middle;
     }}
 
@@ -394,18 +443,29 @@ def heatmap_table(heatmap, max_value):
                 f"{distance:.1f}</td>"
             )
 
-        runner_label = escape(runner)
+        is_zero = total == 0
+        runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
+        runner_label = f'<span class="{runner_label_class}">{escape(runner)}</span>'
         if total == 0:
-            runner_label += '<span class="zero-run-badge">RS</span>'
+            runner_label += '<span class="zero-run-badge">No run yet</span>'
             if show_standby_note:
                 runner_label += '<span class="zero-run-note">Running shoes on standby</span>'
 
         cells.insert(0, f'<td class="runner-cell">{runner_label}</td>')
         cells.append(f'<td class="number">{total:.1f} km</td>')
-        rows.append("<tr>" + "".join(cells) + "</tr>")
+        row_class = "runner-idle" if is_zero else "runner-active"
+        rows.append(f'<tr class="{row_class}">' + "".join(cells) + "</tr>")
+
+    legend_html = (
+        '<div class="status-legend">'
+        '<span class="legend-item"><span class="legend-dot legend-active"></span>Ran this week</span>'
+        '<span class="legend-item"><span class="legend-dot legend-idle"></span>No run this week</span>'
+        '</div>'
+    )
 
     return (
         '<div class="table-wrap">'
+        + legend_html
         + table(["Runner"] + DAYS + ["Total"], rows)
         + "</div>"
     )
