@@ -397,22 +397,22 @@ def render_dashboard(
     <section class="grid equal">
       <div>
         <h2>Leaderboard Since 01-Jun</h2>
-        {leaderboard_table(leaderboard, achievers=achievers)}
+        {leaderboard_table(leaderboard)}
       </div>
       <div>
         <h2>Current Week Heatmap ({escape(week_start.strftime('%d-%b'))})</h2>
-        {heatmap_table(heatmap, max_heatmap_value, achievers=achievers)}
+        {heatmap_table(heatmap, max_heatmap_value)}
       </div>
     </section>
 
     <section class="grid">
       <div>
         <h2>Achievements Since 01-Jun</h2>
-        {achievements_table(achievements)}
+        {achievements_table(achievements, achievers)}
       </div>
       <div>
         <h2>Recent Activities Since 01-Jun</h2>
-        {recent_runs_table(recent_runs, achievers=achievers)}
+        {recent_runs_table(recent_runs)}
       </div>
     </section>
   </main>
@@ -436,7 +436,7 @@ def summary_cards(summary):
     )
 
 
-def leaderboard_table(leaderboard, achievers=None, empty_message="No leaderboard data yet."):
+def leaderboard_table(leaderboard, empty_message="No leaderboard data yet."):
     if not leaderboard:
         return f'<div class="empty">{escape(empty_message)}</div>'
 
@@ -445,7 +445,7 @@ def leaderboard_table(leaderboard, achievers=None, empty_message="No leaderboard
         rows.append(
             "<tr>"
             f"<td>{rank}</td>"
-            f"<td>{render_runner_name(runner['runner'], achievers)}</td>"
+            f"<td>{escape(runner['runner'])}</td>"
             f"<td class=\"number\">{runner['distance']:.1f} km</td>"
             f"<td class=\"number\">{runner['runs']}</td>"
             "</tr>"
@@ -457,26 +457,41 @@ def leaderboard_table(leaderboard, achievers=None, empty_message="No leaderboard
     )
 
 
-def heatmap_table(heatmap, max_value, achievers=None):
+def heatmap_table(heatmap, max_value):
   if not heatmap:
     return '<div class="empty">No heatmap data yet.</div>'
 
   rows = []
   show_standby_note = should_show_standby_note()
+  
+  # Calculate totals first to find top 3
+  runner_totals = {}
+  for runner in heatmap.keys():
+    total = 0
+    for day in DAYS:
+      distance = round(heatmap[runner].get(day, 0), 1)
+      total += distance
+    runner_totals[runner] = total
+  
+  # Get top 3 runners by distance
+  top_3 = sorted(runner_totals.items(), key=lambda x: x[1], reverse=True)[:3]
+  medals = {name: ["1\ufe0f\u20e3", "2\ufe0f\u20e3", "3\ufe0f\u20e3"][i] for i, (name, _) in enumerate(top_3)}
 
   for runner in sorted(heatmap.keys()):
-    total = 0
+    total = runner_totals[runner]
     distances = []
     cells = []
 
     for day in DAYS:
       distance = round(heatmap[runner].get(day, 0), 1)
-      total += distance
       distances.append(distance)
 
     is_zero = total == 0
     runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
-    runner_label = f'<span class="{runner_label_class}">{render_runner_name(runner, achievers)}</span>'
+    runner_display = escape(runner)
+    if runner in medals:
+      runner_display = f"{medals[runner]} {runner_display}"
+    runner_label = f'<span class="{runner_label_class}">{runner_display}</span>'
     if total == 0:
       runner_label += '<span class="status-pill status-pill-idle">RUN STRIKE ??</span>'
 
@@ -506,14 +521,14 @@ def heatmap_table(heatmap, max_value, achievers=None):
   return '<div class="table-wrap">' + legend_html + table(["Runner"] + DAYS + ["Total"], rows) + "</div>"
 
 
-def achievements_table(achievements):
+def achievements_table(achievements, achievers=None):
     if not achievements:
         return '<div class="empty">No achievements yet.</div>'
 
     rows = [
         "<tr>"
         f"<td>{escape(item['metric'])}</td>"
-        f"<td>{escape(item['winner'])}</td>"
+        f"<td>{render_runner_name(item['winner'], achievers)}</td>"
         f"<td>{escape(item['value'])}</td>"
         "</tr>"
         for item in achievements
@@ -522,7 +537,7 @@ def achievements_table(achievements):
     return table(["Metric", "Winner", "Value"], rows)
 
 
-def recent_runs_table(recent_runs, achievers=None):
+def recent_runs_table(recent_runs):
     if not recent_runs:
         return '<div class="empty">No recent runs yet.</div>'
 
@@ -531,7 +546,7 @@ def recent_runs_table(recent_runs, achievers=None):
         rows.append(
             "<tr>"
             f"<td>{escape(activity['date'])}</td>"
-          f"<td>{render_runner_name(activity['runner'], achievers)}</td>"
+            f"<td>{escape(activity['runner'])}</td>"
             f"<td class=\"activity\">{escape(activity['activity'])}</td>"
             f"<td class=\"number\">{activity['distance']:.2f} km</td>"
             f"<td class=\"number\">{escape(activity['pace'])}</td>"
