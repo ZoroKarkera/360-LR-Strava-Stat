@@ -720,7 +720,7 @@ def get_achievement_winners(achievements):
 def render_runner_name(name, achievers=None):
     safe_name = escape(name)
     if achievers and normalize_runner_name(name) in achievers:
-        safe_name += '<span class="achiever-crown" title="Achievement winner">&#x1F451;</span>'
+        safe_name += '<span class="achiever-crown" title="Achievement winner">&#x1F3C6;</span>'
     return safe_name
 
 
