@@ -18,7 +18,7 @@ REPORT_DIR = "reports"
 HTML_FILE = "360_Long_Runners_Dashboard.html"
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 IST = timezone(timedelta(hours=5, minutes=30))
-FORCE_STANDBY_NOTE_PREVIEW = True
+FORCE_STANDBY_NOTE_PREVIEW = False
 
 
 def to_ist(dt_utc):
