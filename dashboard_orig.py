@@ -323,11 +323,13 @@ def render_dashboard(
       border: 1px solid #7c1e17;
     }}
 
-    .zero-run-note {{
-      margin-left: 8px;
-      font-size: 12px;
-      color: #6a7280;
+    .standby-span {{
+      text-align: center;
       font-style: italic;
+      font-weight: 600;
+      color: #6a7280;
+      background: #f7f9fc;
+      letter-spacing: 0.15px;
     }}
 
     .activity {{
@@ -448,43 +450,52 @@ def leaderboard_table(leaderboard, empty_message="No leaderboard data yet."):
 
 
 def heatmap_table(heatmap, max_value):
-    if not heatmap:
-        return '<div class="empty">No heatmap data yet.</div>'
+  if not heatmap:
+    return '<div class="empty">No heatmap data yet.</div>'
 
-    rows = []
-    show_standby_note = should_show_standby_note()
-    for runner in sorted(heatmap.keys()):
-        total = 0
-        cells = []
-        for day in DAYS:
-            distance = round(heatmap[runner].get(day, 0), 1)
-            total += distance
-            cells.append(
-                f'<td class="heat" style="{heat_style(distance, max_value)}">'
-                f"{distance:.1f}</td>"
-            )
+  rows = []
+  show_standby_note = should_show_standby_note()
 
-        is_zero = total == 0
-        runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
-        runner_label = f'<span class="{runner_label_class}">{escape(runner)}</span>'
-        if total == 0:
-            runner_label += '<span class="status-pill status-pill-idle">RUN STRIKE ??</span>'
-            if show_standby_note:
-                runner_label += '<span class="zero-run-note">Running shoes on standby</span>'
+  for runner in sorted(heatmap.keys()):
+    total = 0
+    distances = []
+    cells = []
 
-        cells.insert(0, f'<td class="runner-cell">{runner_label}</td>')
-        cells.append(f'<td class="number">{total:.1f} km</td>')
-        row_class = "runner-idle" if is_zero else "runner-active"
-        rows.append(f'<tr class="{row_class}">' + "".join(cells) + "</tr>")
+    for day in DAYS:
+      distance = round(heatmap[runner].get(day, 0), 1)
+      total += distance
+      distances.append(distance)
 
-    legend_html = (
-        '<div class="status-legend">'
-      '<span class="legend-item"><span class="legend-swatch legend-active"></span>Ran this week</span>'
-      '<span class="legend-item"><span class="legend-swatch legend-idle"></span>Did not run this week</span>'
-        '</div>'
-    )
+    is_zero = total == 0
+    runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
+    runner_label = f'<span class="{runner_label_class}">{escape(runner)}</span>'
+    if total == 0:
+      runner_label += '<span class="status-pill status-pill-idle">RUN STRIKE ??</span>'
 
-    return '<div class="table-wrap">' + legend_html + table(["Runner"] + DAYS + ["Total"], rows) + "</div>"
+    if is_zero and show_standby_note:
+      cells.append(
+        f'<td class="standby-span" colspan="{len(DAYS)}">Running shoes on standby</td>'
+      )
+    else:
+      for distance in distances:
+        cells.append(
+          f'<td class="heat" style="{heat_style(distance, max_value)}">'
+          f"{distance:.1f}</td>"
+        )
+
+    cells.insert(0, f'<td class="runner-cell">{runner_label}</td>')
+    cells.append(f'<td class="number">{total:.1f} km</td>')
+    row_class = "runner-idle" if is_zero else "runner-active"
+    rows.append(f'<tr class="{row_class}">' + "".join(cells) + "</tr>")
+
+  legend_html = (
+    '<div class="status-legend">'
+    '<span class="legend-item"><span class="legend-swatch legend-active"></span>Ran this week</span>'
+    '<span class="legend-item"><span class="legend-swatch legend-idle"></span>Did not run this week</span>'
+    '</div>'
+  )
+
+  return '<div class="table-wrap">' + legend_html + table(["Runner"] + DAYS + ["Total"], rows) + "</div>"
 
 
 def achievements_table(achievements):

@@ -323,11 +323,13 @@ def render_dashboard(
       border: 1px solid #7c1e17;
     }}
 
-    .zero-run-note {{
-      margin-left: 8px;
-      font-size: 12px;
-      color: #6a7280;
+    .standby-span {{
+      text-align: center;
       font-style: italic;
+      font-weight: 600;
+      color: #6a7280;
+      background: #f7f9fc;
+      letter-spacing: 0.15px;
     }}
 
     .activity {{
@@ -457,6 +459,7 @@ def heatmap_table(heatmap, max_value):
     for athlete in athletes:
         runner = athlete.firstname
         total = 0
+        distances = []
         cells = []
 
         for day in DAYS:
@@ -465,18 +468,24 @@ def heatmap_table(heatmap, max_value):
                 1
             )
             total += distance
-            cells.append(
-                f'<td class="heat" style="{heat_style(distance, max_value)}">'
-                f"{distance:.1f}</td>"
-            )
+            distances.append(distance)
 
         is_zero = total == 0
         runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
         runner_label = f'<span class="{runner_label_class}">{escape(runner)}</span>'
         if total == 0:
             runner_label += '<span class="status-pill status-pill-idle">RUN STRIKE ??</span>'
-            if show_standby_note:
-                runner_label += '<span class="zero-run-note">Running shoes on standby</span>'
+
+        if is_zero and show_standby_note:
+            cells.append(
+                f'<td class="standby-span" colspan="{len(DAYS)}">Running shoes on standby</td>'
+            )
+        else:
+            for distance in distances:
+                cells.append(
+                    f'<td class="heat" style="{heat_style(distance, max_value)}">'
+                    f"{distance:.1f}</td>"
+                )
 
         cells.insert(0, f'<td class="runner-cell">{runner_label}</td>')
         cells.append(f'<td class="number">{total:.1f} km</td>')
