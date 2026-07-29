@@ -479,8 +479,7 @@ def heatmap_table(heatmap, max_value):
     
     # Get top 3 runners by distance
     top_3 = sorted(runner_totals.items(), key=lambda x: x[1], reverse=True)[:3]
-    top_3_runners = {name for name, _ in top_3}
-    medals = {name: ["1️⃣", "2️⃣", "3️⃣"][i] for i, (name, _) in enumerate(top_3)}
+    medals = {name: ["🥇", "🥈", "🥉"][i] for i, (name, _) in enumerate(top_3)}
 
     for athlete in athletes:
         runner = athlete.firstname
@@ -499,7 +498,7 @@ def heatmap_table(heatmap, max_value):
         runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
         runner_display = escape(runner)
         if runner in medals:
-            runner_display = f"{medals[runner]} {runner_display}"
+          runner_display = f"{runner_display} {medals[runner]}"
         runner_label = f'<span class="{runner_label_class}">{runner_display}</span>'
         if total == 0:
             runner_label += '<span class="status-pill status-pill-idle">RUN STRIKE ??</span>'
