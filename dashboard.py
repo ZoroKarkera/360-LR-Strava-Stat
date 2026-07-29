@@ -77,6 +77,7 @@ def render_dashboard(
     max_heatmap_value = max(
         [heatmap[runner].get(day, 0) for runner in heatmap for day in DAYS] or [0]
     )
+    achievers = get_achievement_winners(achievements)
 
     IST = timezone(timedelta(hours=5, minutes=30))
     generated_at = dt.now(IST).strftime("%d %b %Y, %I:%M %p IST")
@@ -323,6 +324,13 @@ def render_dashboard(
       border: 1px solid #7c1e17;
     }}
 
+    .achiever-crown {{
+      margin-left: 6px;
+      font-size: 12px;
+      color: #b7791f;
+      vertical-align: middle;
+    }}
+
     .standby-span {{
       text-align: center;
       font-style: italic;
@@ -384,11 +392,11 @@ def render_dashboard(
     <section class="grid equal">
       <div>
         <h2>Leaderboard Since 01-Jun</h2>
-        {leaderboard_table(leaderboard)}
+        {leaderboard_table(leaderboard, achievers=achievers)}
       </div>
       <div>
         <h2>Current Week Heatmap ({escape(week_start.strftime('%d-%b'))})</h2>
-        {heatmap_table(heatmap, max_heatmap_value)}
+        {heatmap_table(heatmap, max_heatmap_value, achievers=achievers)}
       </div>
     </section>
 
@@ -399,7 +407,7 @@ def render_dashboard(
       </div>
       <div>
         <h2>Recent Activities Since 01-Jun</h2>
-        {recent_runs_table(recent_runs)}
+        {recent_runs_table(recent_runs, achievers=achievers)}
       </div>
     </section>
   </main>
@@ -422,7 +430,7 @@ def summary_cards(summary):
     )
 
 
-def leaderboard_table(leaderboard, empty_message="No leaderboard data yet."):
+def leaderboard_table(leaderboard, achievers=None, empty_message="No leaderboard data yet."):
     if not leaderboard:
         return f'<div class="empty">{escape(empty_message)}</div>'
 
@@ -431,7 +439,7 @@ def leaderboard_table(leaderboard, empty_message="No leaderboard data yet."):
         rows.append(
             "<tr>"
             f"<td>{rank}</td>"
-            f"<td>{escape(runner['runner'])}</td>"
+            f"<td>{render_runner_name(runner['runner'], achievers)}</td>"
             f"<td class=\"number\">{runner['distance']:.1f} km</td>"
             f"<td class=\"number\">{runner['runs']}</td>"
             "</tr>"
@@ -443,7 +451,7 @@ def leaderboard_table(leaderboard, empty_message="No leaderboard data yet."):
     )
 
 
-def heatmap_table(heatmap, max_value):
+def heatmap_table(heatmap, max_value, achievers=None):
     if Athlete.query.count() == 0:
         return '<div class="empty">No heatmap data yet.</div>'
 
@@ -472,7 +480,7 @@ def heatmap_table(heatmap, max_value):
 
         is_zero = total == 0
         runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
-        runner_label = f'<span class="{runner_label_class}">{escape(runner)}</span>'
+        runner_label = f'<span class="{runner_label_class}">{render_runner_name(runner, achievers)}</span>'
         if total == 0:
             runner_label += '<span class="status-pill status-pill-idle">RUN STRIKE ??</span>'
 
@@ -522,7 +530,7 @@ def achievements_table(achievements):
     return table(["Metric", "Winner", "Value"], rows)
 
 
-def recent_runs_table(recent_runs):
+def recent_runs_table(recent_runs, achievers=None):
     if not recent_runs:
         return '<div class="empty">No recent runs yet.</div>'
 
@@ -531,7 +539,7 @@ def recent_runs_table(recent_runs):
         rows.append(
             "<tr>"
             f"<td>{escape(activity['date'])}</td>"
-            f"<td>{escape(activity['runner'])}</td>"
+          f"<td>{render_runner_name(activity['runner'], achievers)}</td>"
             f"<td class=\"activity\">{escape(activity['activity'])}</td>"
             f"<td class=\"number\">{activity['distance']:.2f} km</td>"
             f"<td class=\"number\">{escape(activity['pace'])}</td>"
@@ -675,6 +683,26 @@ def format_optional(value, suffix):
         text = str(value)
 
     return f"{text} {suffix}".strip()
+
+
+def normalize_runner_name(name):
+    return " ".join(str(name or "").split()).casefold()
+
+
+def get_achievement_winners(achievements):
+    winners = set()
+    for item in achievements or []:
+        normalized = normalize_runner_name(item.get("winner"))
+        if normalized and normalized not in {"-", "unknown"}:
+            winners.add(normalized)
+    return winners
+
+
+def render_runner_name(name, achievers=None):
+    safe_name = escape(name)
+    if achievers and normalize_runner_name(name) in achievers:
+        safe_name += '<span class="achiever-crown" title="Achievement winner">&#x1F451;</span>'
+    return safe_name
 
 
 def escape(value):
