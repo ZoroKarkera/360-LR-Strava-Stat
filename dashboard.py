@@ -17,10 +17,20 @@ from statistics import (
 REPORT_DIR = "reports"
 HTML_FILE = "360_Long_Runners_Dashboard.html"
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+IST = timezone(timedelta(hours=5, minutes=30))
+FORCE_STANDBY_NOTE_PREVIEW = False
 
 
 def to_ist(dt_utc):
-    return dt_utc.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=5, minutes=30)))
+  return dt_utc.replace(tzinfo=timezone.utc).astimezone(IST)
+
+
+def should_show_standby_note(now_ist=None):
+  if FORCE_STANDBY_NOTE_PREVIEW:
+    return True
+
+  now_ist = now_ist or dt.now(IST)
+  return now_ist.weekday() == 6 and now_ist.hour >= 13
 
 
 def generate_dashboard(filename=None):
@@ -67,6 +77,7 @@ def render_dashboard(
     max_heatmap_value = max(
         [heatmap[runner].get(day, 0) for runner in heatmap for day in DAYS] or [0]
     )
+    achievers = get_achievement_winners(achievements)
 
     IST = timezone(timedelta(hours=5, minutes=30))
     generated_at = dt.now(IST).strftime("%d %b %Y, %I:%M %p IST")
@@ -224,6 +235,111 @@ def render_dashboard(
       border-left: 1px solid #edf1f5;
     }}
 
+    .runner-cell {{
+      white-space: nowrap;
+    }}
+
+    .runner-active .runner-cell {{
+      background: #f4fbf6;
+    }}
+
+    .runner-idle .runner-cell {{
+      background: repeating-linear-gradient(
+        135deg,
+        #fff2f1 0,
+        #fff2f1 6px,
+        #ffe5e2 6px,
+        #ffe5e2 12px
+      );
+    }}
+
+    .runner-name-active {{
+      color: #1f7a4b;
+      font-weight: 700;
+    }}
+
+    .runner-name-idle {{
+      color: #9f2f2f;
+      font-weight: 700;
+    }}
+
+    .status-legend {{
+      margin-bottom: 8px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: #5b6470;
+    }}
+
+    .legend-item {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }}
+
+    .legend-swatch {{
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      display: inline-block;
+      border: 1px solid #8f98a3;
+    }}
+
+    .legend-active {{
+      background: #2e945c;
+    }}
+
+    .legend-idle {{
+      background: repeating-linear-gradient(
+        135deg,
+        #d74f3a 0,
+        #d74f3a 4px,
+        #ffd5cf 4px,
+        #ffd5cf 8px
+      );
+    }}
+
+    .status-pill {{
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+      vertical-align: middle;
+    }}
+
+    .status-pill-active {{
+      color: #ffffff;
+      background: #1f7a4b;
+      border: 1px solid #155f39;
+    }}
+
+    .status-pill-idle {{
+      color: #ffffff;
+      background: #a1281f;
+      border: 1px solid #7c1e17;
+    }}
+
+    .achiever-crown {{
+      margin-left: 6px;
+      font-size: 12px;
+      color: #b7791f;
+      vertical-align: middle;
+    }}
+
+    .standby-span {{
+      text-align: center;
+      font-style: italic;
+      font-weight: 600;
+      color: #6a7280;
+      background: #f7f9fc;
+      letter-spacing: 0.15px;
+    }}
+
     .activity {{
       max-width: 320px;
     }}
@@ -287,7 +403,7 @@ def render_dashboard(
     <section class="grid">
       <div>
         <h2>Achievements Since 01-Jun</h2>
-        {achievements_table(achievements)}
+        {achievements_table(achievements, achievers)}
       </div>
       <div>
         <h2>Recent Activities Since 01-Jun</h2>
@@ -340,56 +456,91 @@ def heatmap_table(heatmap, max_value):
         return '<div class="empty">No heatmap data yet.</div>'
 
     rows = []
-
+    show_standby_note = should_show_standby_note()
+    
+    # Calculate totals first to find top 3
+    runner_totals = {}
     athletes = (
         Athlete.query
         .order_by(Athlete.firstname.asc())
         .all()
     )
-
+    
     for athlete in athletes:
-
         runner = athlete.firstname
         total = 0
-
-        cells = [f"<td>{escape(runner)}</td>"]
-
         for day in DAYS:
-
             distance = round(
                 heatmap.get(runner, {}).get(day, 0),
                 1
             )
-
             total += distance
+        runner_totals[runner] = total
+    
+    # Get top 3 runners by distance
+    top_3 = sorted(runner_totals.items(), key=lambda x: x[1], reverse=True)[:3]
+    medals = {name: ["🥇", "🥈", "🥉"][i] for i, (name, _) in enumerate(top_3)}
 
-            cells.append(
-                f'<td class="heat" style="{heat_style(distance, max_value)}">'
-                f"{distance:.1f}</td>"
+    for athlete in athletes:
+        runner = athlete.firstname
+        total = runner_totals[runner]
+        distances = []
+        cells = []
+
+        for day in DAYS:
+            distance = round(
+                heatmap.get(runner, {}).get(day, 0),
+                1
             )
+            distances.append(distance)
 
-        cells.append(
-            f'<td class="number">{total:.1f} km</td>'
-        )
+        is_zero = total == 0
+        runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
+        runner_display = escape(runner)
+        if runner in medals:
+          runner_display = f"{runner_display} {medals[runner]}"
+        runner_label = f'<span class="{runner_label_class}">{runner_display}</span>'
+        if total == 0:
+            runner_label += '<span class="status-pill status-pill-idle">RUN STRIKE ??</span>'
 
-        rows.append(
-            "<tr>" + "".join(cells) + "</tr>"
-        )
+        if is_zero and show_standby_note:
+            cells.append(
+                f'<td class="standby-span" colspan="{len(DAYS)}">Running shoes on standby</td>'
+            )
+        else:
+            for distance in distances:
+                cells.append(
+                    f'<td class="heat" style="{heat_style(distance, max_value)}">'
+                    f"{distance:.1f}</td>"
+                )
+
+        cells.insert(0, f'<td class="runner-cell">{runner_label}</td>')
+        cells.append(f'<td class="number">{total:.1f} km</td>')
+        row_class = "runner-idle" if is_zero else "runner-active"
+        rows.append(f'<tr class="{row_class}">' + "".join(cells) + "</tr>")
+
+    legend_html = (
+        '<div class="status-legend">'
+      '<span class="legend-item"><span class="legend-swatch legend-active"></span>Ran this week</span>'
+      '<span class="legend-item"><span class="legend-swatch legend-idle"></span>Did not run this week</span>'
+        '</div>'
+    )
 
     return (
         '<div class="table-wrap">'
+        + legend_html
         + table(["Runner"] + DAYS + ["Total"], rows)
         + "</div>"
     )
 
-def achievements_table(achievements):
+def achievements_table(achievements, achievers=None):
     if not achievements:
         return '<div class="empty">No achievements yet.</div>'
 
     rows = [
         "<tr>"
         f"<td>{escape(item['metric'])}</td>"
-        f"<td>{escape(item['winner'])}</td>"
+        f"<td>{render_runner_name(item['winner'], achievers)}</td>"
         f"<td>{escape(item['value'])}</td>"
         "</tr>"
         for item in achievements
@@ -551,6 +702,26 @@ def format_optional(value, suffix):
         text = str(value)
 
     return f"{text} {suffix}".strip()
+
+
+def normalize_runner_name(name):
+    return " ".join(str(name or "").split()).casefold()
+
+
+def get_achievement_winners(achievements):
+    winners = set()
+    for item in achievements or []:
+        normalized = normalize_runner_name(item.get("winner"))
+        if normalized and normalized not in {"-", "unknown"}:
+            winners.add(normalized)
+    return winners
+
+
+def render_runner_name(name, achievers=None):
+    safe_name = escape(name)
+    if achievers and normalize_runner_name(name) in achievers:
+        safe_name += '<span class="achiever-crown" title="Achievement winner">&#x1F3C6;</span>'
+    return safe_name
 
 
 def escape(value):

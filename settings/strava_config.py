@@ -34,13 +34,27 @@ STRAVA_APPS = {
 }
 
 
+def normalize_athlete_name(name):
+    # Normalize user-provided names to avoid config mismatches from case/spacing.
+    return " ".join(str(name or "").split()).casefold()
+
+
 def get_app_for_athlete(firstname):
+    target = normalize_athlete_name(firstname)
+
     for app_name, app in CONFIG["apps"].items():
-        if firstname in app["athletes"]:
+        athletes = app.get("athletes", [])
+        normalized_athletes = {
+            normalize_athlete_name(athlete)
+            for athlete in athletes
+        }
+
+        if target in normalized_athletes:
             return app_name
 
+    cleaned = " ".join(str(firstname or "").split())
     raise ValueError(
-        f"Athlete '{firstname}' not found in config/strava_apps.yml"
+        f"Athlete '{cleaned}' not found in config/strava_apps.yml"
     )
 
 
