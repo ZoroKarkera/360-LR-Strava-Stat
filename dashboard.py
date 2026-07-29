@@ -482,7 +482,7 @@ def heatmap_table(heatmap, max_value):
     legend_html = (
         '<div class="status-legend">'
       '<span class="legend-item"><span class="legend-swatch legend-active"></span>Ran this week</span>'
-      '<span class="legend-item"><span class="legend-swatch legend-idle"></span>RUN STRIKE ??</span>'
+      '<span class="legend-item"><span class="legend-swatch legend-idle"></span>Did not run this week</span>'
         '</div>'
     )
 
