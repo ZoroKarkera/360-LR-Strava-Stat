@@ -18,6 +18,7 @@ REPORT_DIR = "reports"
 HTML_FILE = "360_Long_Runners_Dashboard.html"
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 IST = timezone(timedelta(hours=5, minutes=30))
+FORCE_STANDBY_NOTE_PREVIEW = True
 
 
 def to_ist(dt_utc):
@@ -25,6 +26,9 @@ def to_ist(dt_utc):
 
 
 def should_show_standby_note(now_ist=None):
+  if FORCE_STANDBY_NOTE_PREVIEW:
+    return True
+
   now_ist = now_ist or dt.now(IST)
   return now_ist.weekday() == 6 and now_ist.hour >= 13
 
