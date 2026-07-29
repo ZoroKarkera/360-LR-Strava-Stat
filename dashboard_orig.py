@@ -236,7 +236,6 @@ def render_dashboard(
 
     .runner-active .runner-cell {{
       background: #f4fbf6;
-      border-left: 6px solid #1f7a4b;
     }}
 
     .runner-idle .runner-cell {{
@@ -247,7 +246,6 @@ def render_dashboard(
         #ffe5e2 6px,
         #ffe5e2 12px
       );
-      border-left: 6px solid #a1281f;
     }}
 
     .runner-name-active {{
@@ -466,7 +464,7 @@ def heatmap_table(heatmap, max_value):
         runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
         runner_label = f'<span class="{runner_label_class}">{escape(runner)}</span>'
         if total == 0:
-            runner_label += '<span class="status-pill status-pill-idle">Run strike???</span>'
+            runner_label += '<span class="status-pill status-pill-idle">RUN STRIKE ??</span>'
             if show_standby_note:
                 runner_label += '<span class="zero-run-note">Running shoes on standby</span>'
 
@@ -478,7 +476,7 @@ def heatmap_table(heatmap, max_value):
     legend_html = (
         '<div class="status-legend">'
       '<span class="legend-item"><span class="legend-swatch legend-active"></span>Ran this week</span>'
-      '<span class="legend-item"><span class="legend-swatch legend-idle"></span>Run strike???</span>'
+      '<span class="legend-item"><span class="legend-swatch legend-idle"></span>RUN STRIKE ??</span>'
         '</div>'
     )
 
