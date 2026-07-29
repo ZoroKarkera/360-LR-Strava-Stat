@@ -235,11 +235,19 @@ def render_dashboard(
     }}
 
     .runner-active .runner-cell {{
-      background: #eef9f1;
+      background: #f4fbf6;
+      border-left: 6px solid #1f7a4b;
     }}
 
     .runner-idle .runner-cell {{
-      background: #fff2f1;
+      background: repeating-linear-gradient(
+        135deg,
+        #fff2f1 0,
+        #fff2f1 6px,
+        #ffe5e2 6px,
+        #ffe5e2 12px
+      );
+      border-left: 6px solid #a1281f;
     }}
 
     .runner-name-active {{
@@ -267,12 +275,12 @@ def render_dashboard(
       gap: 6px;
     }}
 
-    .legend-dot {{
-      width: 9px;
-      height: 9px;
-      border-radius: 999px;
+    .legend-swatch {{
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
       display: inline-block;
-      border: 1px solid transparent;
+      border: 1px solid #8f98a3;
     }}
 
     .legend-active {{
@@ -280,20 +288,37 @@ def render_dashboard(
     }}
 
     .legend-idle {{
-      background: #cc4b37;
+      background: repeating-linear-gradient(
+        135deg,
+        #d74f3a 0,
+        #d74f3a 4px,
+        #ffd5cf 4px,
+        #ffd5cf 8px
+      );
     }}
 
-    .zero-run-badge {{
+    .status-pill {{
       display: inline-block;
       margin-left: 6px;
-      padding: 1px 6px;
+      padding: 2px 7px;
       border-radius: 999px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      color: #8a2f22;
-      background: #ffe9e6;
-      border: 1px solid #f2b8af;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
       vertical-align: middle;
+    }}
+
+    .status-pill-active {{
+      color: #ffffff;
+      background: #1f7a4b;
+      border: 1px solid #155f39;
+    }}
+
+    .status-pill-idle {{
+      color: #ffffff;
+      background: #a1281f;
+      border: 1px solid #7c1e17;
     }}
 
     .zero-run-note {{
@@ -447,7 +472,7 @@ def heatmap_table(heatmap, max_value):
         runner_label_class = "runner-name-idle" if is_zero else "runner-name-active"
         runner_label = f'<span class="{runner_label_class}">{escape(runner)}</span>'
         if total == 0:
-            runner_label += '<span class="zero-run-badge">No run yet</span>'
+            runner_label += '<span class="status-pill status-pill-idle">Run strike???</span>'
             if show_standby_note:
                 runner_label += '<span class="zero-run-note">Running shoes on standby</span>'
 
@@ -458,8 +483,8 @@ def heatmap_table(heatmap, max_value):
 
     legend_html = (
         '<div class="status-legend">'
-        '<span class="legend-item"><span class="legend-dot legend-active"></span>Ran this week</span>'
-        '<span class="legend-item"><span class="legend-dot legend-idle"></span>No run this week</span>'
+      '<span class="legend-item"><span class="legend-swatch legend-active"></span>Ran this week</span>'
+      '<span class="legend-item"><span class="legend-swatch legend-idle"></span>Run strike???</span>'
         '</div>'
     )
 
