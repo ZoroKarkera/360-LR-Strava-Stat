@@ -25,11 +25,18 @@ def to_ist(dt_utc):
   return dt_utc.replace(tzinfo=timezone.utc).astimezone(IST)
 
 
-def should_show_standby_note(now_ist=None):
+def should_show_standby_note(week_start=None, now_ist=None):
   if FORCE_STANDBY_NOTE_PREVIEW:
     return True
 
   now_ist = now_ist or dt.now(IST)
+  current_week_start = now_ist.date() - timedelta(days=now_ist.weekday())
+
+  if week_start is not None:
+    selected_week_start = week_start.date()
+    if selected_week_start < current_week_start:
+      return True
+
   return now_ist.weekday() == 6 and now_ist.hour >= 13
 
 
@@ -397,7 +404,7 @@ def render_dashboard(
       </div>
       <div>
         <h2>Week Heatmap ({escape(week_start.strftime('%d-%b'))})</h2>
-        {heatmap_table(heatmap, max_heatmap_value)}
+        {heatmap_table(heatmap, max_heatmap_value, week_start=week_start)}
       </div>
     </section>
 
@@ -452,12 +459,12 @@ def leaderboard_table(leaderboard, empty_message="No leaderboard data yet."):
     )
 
 
-def heatmap_table(heatmap, max_value):
+def heatmap_table(heatmap, max_value, week_start=None):
     if Athlete.query.count() == 0:
         return '<div class="empty">No heatmap data yet.</div>'
 
     rows = []
-    show_standby_note = should_show_standby_note()
+    show_standby_note = should_show_standby_note(week_start=week_start)
     
     # Calculate totals first to find top 3
     runner_totals = {}
@@ -597,28 +604,34 @@ def get_achievements(leaderboard, start_date=None):
     highest_elevation = max(activities, key=lambda item: item.total_elevation_gain or 0)
     most_runs = max(leaderboard, key=lambda item: item["runs"]) if leaderboard else None
 
-    def best_effort(target_m, margin_m):
-        candidates = [
-            a for a in activities
-            if a.distance and a.moving_time
-            and abs(a.distance - target_m) <= margin_m
-        ]
-        if not candidates:
-            return None
-        return min(candidates, key=lambda a: a.moving_time / (a.distance / 1000))
+    def best_effort(target_m, margin_m=None, min_distance_m=None, max_distance_m=None):
+      candidates = [
+        activity for activity in activities
+        if activity.distance and (activity.moving_time or activity.elapsed_time)
+        and (margin_m is None or abs(activity.distance - target_m) <= margin_m)
+        and (min_distance_m is None or activity.distance >= min_distance_m)
+        and (max_distance_m is None or activity.distance <= max_distance_m)
+      ]
+      if not candidates:
+        return None
+      return min(
+        candidates,
+        key=lambda activity: (activity.moving_time or activity.elapsed_time) / (activity.distance / 1000),
+      )
 
     def format_effort_time(activity, target_m):
-        pace_sec = activity.moving_time / (activity.distance / 1000)
-        total_sec = int(round(pace_sec * (target_m / 1000)))
-        mins, secs = divmod(total_sec, 60)
-        hours, mins = divmod(mins, 60)
-        if hours:
-            return f"{hours}:{mins:02d}:{secs:02d}"
-        return f"{mins}:{secs:02d}"
+      effort_seconds = activity.moving_time or activity.elapsed_time
+      pace_sec = effort_seconds / (activity.distance / 1000)
+      total_sec = int(round(pace_sec * (target_m / 1000)))
+      mins, secs = divmod(total_sec, 60)
+      hours, mins = divmod(mins, 60)
+      if hours:
+        return f"{hours}:{mins:02d}:{secs:02d}"
+      return f"{mins}:{secs:02d}"
 
     fastest_5k = best_effort(5000, 500)
     fastest_10k = best_effort(10000, 500)
-    fastest_21k = best_effort(21097, 1000)
+    fastest_21k = best_effort(21097, min_distance_m=21097, max_distance_m=24000)
 
     achievements = [
         {
