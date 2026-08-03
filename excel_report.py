@@ -49,12 +49,12 @@ def generate_excel(filename=None, target_cw=None):
     week_start = get_week_start_for_cw(target_cw)
     week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
-    summary = get_summary(start_date=report_start)
-    leaderboard = get_leaderboard(start_date=report_start)
+    summary = get_summary(start_date=report_start, end_date=week_end)
+    leaderboard = get_leaderboard(start_date=report_start, end_date=week_end)
     heatmap = get_heatmap(start_date=week_start, end_date=week_end)
-    recent_runs = get_recent_runs(limit=20, start_date=report_start)
-    achievements = get_achievements(start_date=report_start)
-    date_range = get_date_range_label(report_start)
+    recent_runs = get_recent_runs(limit=20, start_date=report_start, end_date=week_end)
+    achievements = get_achievements(start_date=report_start, end_date=week_end)
+    date_range = get_date_range_label(report_start, end_date=week_end)
 
     write_title(ws, date_range)
     write_summary(ws, summary)
@@ -220,10 +220,12 @@ def write_recent_runs(ws, recent_runs):
         style_body_row(ws, row, 6, 12)
 
 
-def get_achievements(start_date=None):
+def get_achievements(start_date=None, end_date=None):
     query = Activity.query
     if start_date is not None:
         query = query.filter(Activity.start_date >= start_date)
+    if end_date is not None:
+        query = query.filter(Activity.start_date <= end_date)
 
     activities = query.order_by(Activity.start_date.desc()).all()
     if not activities:
@@ -249,7 +251,7 @@ def get_achievements(start_date=None):
         else None
     )
 
-    leaderboard = get_leaderboard(start_date=start_date)
+    leaderboard = get_leaderboard(start_date=start_date, end_date=end_date)
     most_runs = max(leaderboard, key=lambda item: item["runs"]) if leaderboard else None
 
     rows = [
@@ -282,18 +284,18 @@ def get_achievements(start_date=None):
     return rows
 
 
-def get_date_range_label(report_start):
-    last_activity = (
-        Activity.query
-        .filter(Activity.start_date >= report_start)
-        .order_by(Activity.start_date.desc())
-        .first()
-    )
+def get_date_range_label(report_start, end_date=None):
+    query = Activity.query.filter(Activity.start_date >= report_start)
+    if end_date is not None:
+        query = query.filter(Activity.start_date <= end_date)
+
+    last_activity = query.order_by(Activity.start_date.desc()).first()
 
     start_label = report_start.strftime("%d-%b-%Y")
 
     if not last_activity:
-        return f"{start_label} to today"
+        end_label = end_date.strftime("%d-%b-%Y") if end_date is not None else "today"
+        return f"{start_label} to {end_label}"
 
     return (
         f"{start_label} to "
