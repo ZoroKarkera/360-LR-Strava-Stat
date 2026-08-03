@@ -12,6 +12,13 @@ def to_ist(dt_utc):
     return dt_utc.replace(tzinfo=timezone.utc).astimezone(IST)
 
 
+def to_utc_naive_from_ist(dt_ist):
+    """Convert a naive IST datetime boundary to naive UTC for DB filtering."""
+    if dt_ist is None:
+        return None
+    return dt_ist.replace(tzinfo=IST).astimezone(timezone.utc).replace(tzinfo=None)
+
+
 REPORT_START_MONTH = 6
 REPORT_START_DAY = 1
 

@@ -14,6 +14,7 @@ from statistics import (
     get_recent_runs,
     get_report_start_date,
     get_summary,
+    to_utc_naive_from_ist,
 )
 
 
@@ -49,12 +50,16 @@ def generate_excel(filename=None, target_cw=None):
     week_start = get_week_start_for_cw(target_cw)
     week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
-    summary = get_summary(start_date=report_start, end_date=week_end)
-    leaderboard = get_leaderboard(start_date=report_start, end_date=week_end)
-    heatmap = get_heatmap(start_date=week_start, end_date=week_end)
-    recent_runs = get_recent_runs(limit=20, start_date=report_start, end_date=week_end)
-    achievements = get_achievements(start_date=report_start, end_date=week_end)
-    date_range = get_date_range_label(report_start, end_date=week_end)
+    query_start = to_utc_naive_from_ist(report_start)
+    week_start_utc = to_utc_naive_from_ist(week_start)
+    week_end_utc = to_utc_naive_from_ist(week_end)
+
+    summary = get_summary(start_date=query_start, end_date=week_end_utc)
+    leaderboard = get_leaderboard(start_date=query_start, end_date=week_end_utc)
+    heatmap = get_heatmap(start_date=week_start_utc, end_date=week_end_utc)
+    recent_runs = get_recent_runs(limit=20, start_date=query_start, end_date=week_end_utc)
+    achievements = get_achievements(start_date=query_start, end_date=week_end_utc)
+    date_range = get_date_range_label(report_start, query_start_date=query_start, end_date=week_end_utc)
 
     write_title(ws, date_range)
     write_summary(ws, summary)
@@ -284,8 +289,9 @@ def get_achievements(start_date=None, end_date=None):
     return rows
 
 
-def get_date_range_label(report_start, end_date=None):
-    query = Activity.query.filter(Activity.start_date >= report_start)
+def get_date_range_label(report_start, query_start_date=None, end_date=None):
+    query_start = query_start_date if query_start_date is not None else report_start
+    query = Activity.query.filter(Activity.start_date >= query_start)
     if end_date is not None:
         query = query.filter(Activity.start_date <= end_date)
 
