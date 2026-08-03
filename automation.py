@@ -75,15 +75,15 @@ def ensure_fresh_token(athlete):
     db.session.commit()
 
 
-def generate_reports():
+def generate_reports(target_cw=None):
     REPORT_DIR.mkdir(exist_ok=True)
 
     today = datetime.now().strftime("%Y-%m-%d")
     dated_html = REPORT_DIR / f"360_Long_Runners_Dashboard_{today}.html"
 
-    excel_path = Path(generate_excel())
-    latest_html_path = Path(generate_dashboard())
-    generate_dashboard(filename=str(dated_html))
+    excel_path = Path(generate_excel(target_cw=target_cw))
+    latest_html_path = Path(generate_dashboard(target_cw=target_cw))
+    generate_dashboard(filename=str(dated_html), target_cw=target_cw)
 
     return {
         "excel": PROJECT_DIR / excel_path,
@@ -161,14 +161,14 @@ Your Chief
 
     return True
 
-def run_workflow(sync=True, email=True, recipient=DEFAULT_RECIPIENT, limit=100):
+def run_workflow(sync=True, email=True, recipient=DEFAULT_RECIPIENT, limit=100, target_cw=None):
     app = create_app()
 
     with app.app_context():
         if sync:
             refresh_data(limit=limit)
 
-        report_paths = generate_reports()
+        report_paths = generate_reports(target_cw=target_cw)
 
     if email:
         send_report_email(report_paths, recipient=recipient)

@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, time, timedelta, timezone
+import re
 
 from models import Activity, Athlete
 
@@ -30,6 +31,45 @@ def get_current_week_start(reference_date=None):
     reference_date = reference_date or datetime.now(IST)
     week_start = reference_date.date() - timedelta(days=reference_date.weekday())
     return datetime.combine(week_start, time.min)
+
+
+def get_week_start_for_cw(target_cw=None, reference_date=None):
+    """Return Monday 00:00 for the requested ISO calendar week.
+
+    Accepted values:
+    - None / "current" / "cw" / "this" / "this-week": current week
+    - "2026-W31" or "2026W31": explicit ISO year and week
+    - "31": week number in the current year
+    """
+    if target_cw is None:
+        return get_current_week_start(reference_date)
+
+    token = str(target_cw).strip()
+    if not token or token.casefold() in {"current", "cw", "this", "this-week"}:
+        return get_current_week_start(reference_date)
+
+    current = reference_date or datetime.now(IST)
+
+    week_only_match = re.fullmatch(r"(\d{1,2})", token)
+    if week_only_match:
+        year = current.year
+        week = int(week_only_match.group(1))
+    else:
+        full_match = re.fullmatch(r"(\d{4})\s*-?\s*[Ww]\s*(\d{1,2})", token)
+        if not full_match:
+            raise ValueError(
+                "Invalid target CW format. Use 'current', 'WW', or 'YYYY-WW' (for example: 31 or 2026-W31)."
+            )
+        year = int(full_match.group(1))
+        week = int(full_match.group(2))
+
+    if week < 1 or week > 53:
+        raise ValueError("Invalid ISO week. Week must be between 1 and 53.")
+
+    try:
+        return datetime.fromisocalendar(year, week, 1)
+    except ValueError as exc:
+        raise ValueError(f"Invalid ISO calendar week '{token}': {exc}") from exc
 
 
 def get_summary(start_date=None, end_date=None):

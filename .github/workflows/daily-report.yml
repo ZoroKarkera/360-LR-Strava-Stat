@@ -3,6 +3,12 @@ name: Daily Strava Report
 on:
   workflow_dispatch:
     inputs:
+      target_cw:
+        description: "Target calendar week for report heatmap (current, WW, or YYYY-WW)"
+        required: false
+        default: "current"
+        type: string
+
       send_email_to_club:
         description: "Send email to all club members"
         required: true
@@ -74,8 +80,14 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
 
         run: |
+          TARGET_CW="current"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.target_cw }}" ]; then
+            TARGET_CW="${{ inputs.target_cw }}"
+          fi
+
           python refresh_and_report.py \
-            --recipient "${{ steps.recipients.outputs.recipient }}"
+            --recipient "${{ steps.recipients.outputs.recipient }}" \
+            --target-cw "$TARGET_CW"
 
       - name: Upload Excel Artifact
         uses: actions/upload-artifact@v4

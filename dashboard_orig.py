@@ -5,9 +5,9 @@ from datetime import datetime as dt
 
 from models import Activity, Athlete
 from statistics import (
-    get_current_week_start,
     get_heatmap,
     get_leaderboard,
+    get_week_start_for_cw,
     get_recent_runs,
     get_report_start_date,
     get_summary,
@@ -25,28 +25,36 @@ def to_ist(dt_utc):
   return dt_utc.replace(tzinfo=timezone.utc).astimezone(IST)
 
 
-def should_show_standby_note(now_ist=None):
+def should_show_standby_note(week_start=None, now_ist=None):
   if FORCE_STANDBY_NOTE_PREVIEW:
     return True
 
   now_ist = now_ist or dt.now(IST)
+  current_week_start = now_ist.date() - timedelta(days=now_ist.weekday())
+
+  if week_start is not None:
+    selected_week_start = week_start.date()
+    if selected_week_start < current_week_start:
+      return True
+
   return now_ist.weekday() == 6 and now_ist.hour >= 13
 
 
-def generate_dashboard(filename=None):
+def generate_dashboard(filename=None, target_cw=None):
     """Generate a self-contained HTML dashboard and return the saved path."""
     output_path = filename or os.path.join(REPORT_DIR, HTML_FILE)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     report_start = get_report_start_date()
-    week_start = get_current_week_start()
+    week_start = get_week_start_for_cw(target_cw)
+    week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
-    summary = get_summary(start_date=report_start)
-    leaderboard = get_leaderboard(start_date=report_start)
-    heatmap = get_heatmap(start_date=week_start)
-    recent_runs = get_recent_runs(limit=20, start_date=report_start)
-    achievements = get_achievements(leaderboard, start_date=report_start)
-    date_range = get_date_range_label(report_start)
+    summary = get_summary(start_date=report_start, end_date=week_end)
+    leaderboard = get_leaderboard(start_date=report_start, end_date=week_end)
+    heatmap = get_heatmap(start_date=week_start, end_date=week_end)
+    recent_runs = get_recent_runs(limit=20, start_date=report_start, end_date=week_end)
+    achievements = get_achievements(leaderboard, start_date=report_start, end_date=week_end)
+    date_range = get_date_range_label(report_start, end_date=week_end)
     generated_at = dt.now(IST).strftime("%d %b %Y, %I:%M %p IST")
 
     html_text = render_dashboard(
@@ -400,8 +408,8 @@ def render_dashboard(
         {leaderboard_table(leaderboard)}
       </div>
       <div>
-        <h2>Current Week Heatmap ({escape(week_start.strftime('%d-%b'))})</h2>
-        {heatmap_table(heatmap, max_heatmap_value)}
+        <h2>Week Heatmap ({escape(week_start.strftime('%d-%b'))})</h2>
+        {heatmap_table(heatmap, max_heatmap_value, week_start=week_start)}
       </div>
     </section>
 
@@ -457,12 +465,12 @@ def leaderboard_table(leaderboard, empty_message="No leaderboard data yet."):
     )
 
 
-def heatmap_table(heatmap, max_value):
+def heatmap_table(heatmap, max_value, week_start=None):
   if not heatmap:
     return '<div class="empty">No heatmap data yet.</div>'
 
   rows = []
-  show_standby_note = should_show_standby_note()
+  show_standby_note = should_show_standby_note(week_start=week_start)
   
   # Calculate totals first to find top 3
   runner_totals = {}
@@ -571,10 +579,12 @@ def table(headers, rows):
     )
 
 
-def get_achievements(leaderboard, start_date=None):
+def get_achievements(leaderboard, start_date=None, end_date=None):
     query = Activity.query
     if start_date is not None:
         query = query.filter(Activity.start_date >= start_date)
+    if end_date is not None:
+        query = query.filter(Activity.start_date <= end_date)
 
     activities = query.order_by(Activity.start_date.desc()).all()
     if not activities:
@@ -582,9 +592,33 @@ def get_achievements(leaderboard, start_date=None):
 
     longest_run = max(activities, key=lambda item: item.distance or 0)
     highest_elevation = max(activities, key=lambda item: item.total_elevation_gain or 0)
-    hr_activities = [activity for activity in activities if activity.average_heartrate]
-    lowest_hr = min(hr_activities, key=lambda item: item.average_heartrate) if hr_activities else None
     most_runs = max(leaderboard, key=lambda item: item["runs"]) if leaderboard else None
+
+    def best_effort(target_m, margin_m=None, min_distance_m=None, max_distance_m=None):
+      candidates = [
+        a for a in activities
+        if a.distance and (a.moving_time or a.elapsed_time)
+        and (margin_m is None or abs(a.distance - target_m) <= margin_m)
+        and (min_distance_m is None or a.distance >= min_distance_m)
+        and (max_distance_m is None or a.distance <= max_distance_m)
+      ]
+      if not candidates:
+        return None
+      return min(candidates, key=lambda a: (a.moving_time or a.elapsed_time) / (a.distance / 1000))
+
+    def format_effort_time(activity, target_m):
+      effort_seconds = activity.moving_time or activity.elapsed_time
+      pace_sec = effort_seconds / (activity.distance / 1000)
+      total_sec = int(round(pace_sec * (target_m / 1000)))
+      mins, secs = divmod(total_sec, 60)
+      hours, mins = divmod(mins, 60)
+      if hours:
+        return f"{hours}:{mins:02d}:{secs:02d}"
+      return f"{mins}:{secs:02d}"
+
+    fastest_5k = best_effort(5000, 500)
+    fastest_10k = best_effort(10000, 500)
+    fastest_21k = best_effort(21097, min_distance_m=21097, max_distance_m=24000)
 
     achievements = [
         {
@@ -604,30 +638,43 @@ def get_achievements(leaderboard, start_date=None):
         },
     ]
 
-    if lowest_hr:
-        achievements.append(
-            {
-                "metric": "Lowest Average HR",
-                "winner": runner_name(lowest_hr),
-                "value": f"{lowest_hr.average_heartrate:.1f} bpm",
-            }
-        )
+    if fastest_5k:
+      achievements.append({
+        "metric": "Fastest 5k",
+        "winner": runner_name(fastest_5k),
+        "value": format_effort_time(fastest_5k, 5000),
+      })
+    if fastest_10k:
+      achievements.append({
+        "metric": "Fastest 10k",
+        "winner": runner_name(fastest_10k),
+        "value": format_effort_time(fastest_10k, 10000),
+      })
+    if fastest_21k:
+      achievements.append({
+        "metric": "Fastest 21k",
+        "winner": runner_name(fastest_21k),
+        "value": format_effort_time(fastest_21k, 21097),
+      })
 
     return achievements
 
 
-def get_date_range_label(report_start):
-    last_activity = (
-        Activity.query
-        .filter(Activity.start_date >= report_start)
-        .order_by(Activity.start_date.desc())
-        .first()
-    )
+def get_date_range_label(report_start, end_date=None):
+    query = Activity.query.filter(Activity.start_date >= report_start)
+    if end_date is not None:
+        query = query.filter(Activity.start_date <= end_date)
 
+    last_activity = query.order_by(Activity.start_date.desc()).first()
     start_label = report_start.strftime("%d/%b")
 
     if not last_activity:
-        return f"{start_label} to {dt.now(timezone(timedelta(hours=5, minutes=30))).strftime('%d/%b')}"
+        end_label = (
+            to_ist(end_date).strftime('%d/%b')
+            if end_date is not None
+            else dt.now(timezone(timedelta(hours=5, minutes=30))).strftime('%d/%b')
+        )
+        return f"{start_label} to {end_label}"
 
     return (
         f"{start_label} to "
