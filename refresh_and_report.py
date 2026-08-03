@@ -28,6 +28,11 @@ def main():
         default=100,
         help="Number of recent Strava activities to fetch per athlete.",
     )
+    parser.add_argument(
+        "--target-cw",
+        default="current",
+        help="Target calendar week for heatmap/sheet (e.g. current, 31, 2026-W31).",
+    )
 
     args = parser.parse_args()
 
@@ -36,6 +41,7 @@ def main():
         email=not args.no_email,
         recipient=args.recipient,
         limit=args.limit,
+        target_cw=args.target_cw,
     )
 
     print("\nGenerated files:")

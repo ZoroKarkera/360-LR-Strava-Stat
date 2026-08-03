@@ -5,9 +5,9 @@ from datetime import datetime as dt
 
 from models import Activity, Athlete
 from statistics import (
-    get_current_week_start,
     get_heatmap,
     get_leaderboard,
+    get_week_start_for_cw,
     get_recent_runs,
     get_report_start_date,
     get_summary,
@@ -33,17 +33,18 @@ def should_show_standby_note(now_ist=None):
   return now_ist.weekday() == 6 and now_ist.hour >= 13
 
 
-def generate_dashboard(filename=None):
+def generate_dashboard(filename=None, target_cw=None):
     """Generate a self-contained HTML dashboard and return the saved path."""
     output_path = filename or os.path.join(REPORT_DIR, HTML_FILE)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     report_start = get_report_start_date()
-    week_start = get_current_week_start()
+    week_start = get_week_start_for_cw(target_cw)
+    week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
     summary = get_summary(start_date=report_start)
     leaderboard = get_leaderboard(start_date=report_start)
-    heatmap = get_heatmap(start_date=week_start)
+    heatmap = get_heatmap(start_date=week_start, end_date=week_end)
     recent_runs = get_recent_runs(limit=20, start_date=report_start)
     achievements = get_achievements(leaderboard, start_date=report_start)
     date_range = get_date_range_label(report_start)
@@ -400,7 +401,7 @@ def render_dashboard(
         {leaderboard_table(leaderboard)}
       </div>
       <div>
-        <h2>Current Week Heatmap ({escape(week_start.strftime('%d-%b'))})</h2>
+        <h2>Week Heatmap ({escape(week_start.strftime('%d-%b'))})</h2>
         {heatmap_table(heatmap, max_heatmap_value)}
       </div>
     </section>

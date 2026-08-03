@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from openpyxl import Workbook
 from openpyxl.formatting.rule import ColorScaleRule
@@ -7,9 +8,9 @@ from openpyxl.utils import get_column_letter
 
 from models import Activity, Athlete
 from statistics import (
-    get_current_week_start,
     get_heatmap,
     get_leaderboard,
+    get_week_start_for_cw,
     get_recent_runs,
     get_report_start_date,
     get_summary,
@@ -34,7 +35,7 @@ COLORS = {
 }
 
 
-def generate_excel(filename=None):
+def generate_excel(filename=None, target_cw=None):
     """Generate the club Excel report and return the saved file path."""
     output_path = filename or os.path.join(REPORT_DIR, REPORT_FILE)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -45,11 +46,12 @@ def generate_excel(filename=None):
     ws.sheet_view.showGridLines = False
 
     report_start = get_report_start_date()
-    week_start = get_current_week_start()
+    week_start = get_week_start_for_cw(target_cw)
+    week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
     summary = get_summary(start_date=report_start)
     leaderboard = get_leaderboard(start_date=report_start)
-    heatmap = get_heatmap(start_date=week_start)
+    heatmap = get_heatmap(start_date=week_start, end_date=week_end)
     recent_runs = get_recent_runs(limit=20, start_date=report_start)
     achievements = get_achievements(start_date=report_start)
     date_range = get_date_range_label(report_start)
@@ -132,7 +134,7 @@ def write_leaderboard(ws, leaderboard):
 
 
 def write_heatmap(ws, heatmap, week_start):
-    section_header(ws, "F9", f"Current Week Heatmap ({week_start.strftime('%d-%b')})")
+    section_header(ws, "F9", f"Week Heatmap ({week_start.strftime('%d-%b')})")
     headers = ["Runner"] + DAYS + ["Total"]
     write_header_row(ws, 10, 6, headers)
 
