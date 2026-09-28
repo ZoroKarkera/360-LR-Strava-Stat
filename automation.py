@@ -112,7 +112,7 @@ def send_report_email(report_paths, recipient=DEFAULT_RECIPIENT):
 
     message = EmailMessage()
     message["Subject"] = (
-        f"🏃 360 Long Runners Report - {datetime.now().strftime('%d-%b-%Y')}"
+        f"🏃 The Ultra Syndicate Report - {datetime.now().strftime('%d-%b-%Y')}"
     )
     message["From"] = sender
 
@@ -123,7 +123,7 @@ def send_report_email(report_paths, recipient=DEFAULT_RECIPIENT):
     message.set_content(
         f"""Hey There,
 
-The latest 360 Long Runners report has been generated automatically.
+The latest report for The Ultra Syndicate has been generated automatically.
 
 📅 Date: {datetime.now().strftime('%d-%b-%Y')}
 📎 Attached:

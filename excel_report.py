@@ -43,7 +43,7 @@ def generate_excel(filename=None, target_cw=None):
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "360 Long Runners"
+    ws.title = "The Ultra Syndicate"
     ws.sheet_view.showGridLines = False
 
     report_start = get_report_start_date()
@@ -76,7 +76,7 @@ def generate_excel(filename=None, target_cw=None):
 
 def write_title(ws, date_range):
     ws.merge_cells("A1:H1")
-    ws["A1"] = "360 Long Runners"
+    ws["A1"] = "The Ultra Syndicate"
     ws["A1"].font = Font(size=22, bold=True, color=COLORS["white"])
     ws["A1"].fill = PatternFill("solid", fgColor=COLORS["navy"])
     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
@@ -120,7 +120,7 @@ def write_summary(ws, summary):
 
 
 def write_leaderboard(ws, leaderboard):
-    section_header(ws, "A9", "Leaderboard Since 01-Jun")
+    section_header(ws, "A9", "Leaderboard Since 28-Sep-2026")
     headers = ["Rank", "Runner", "Distance", "Runs"]
     write_header_row(ws, 10, 1, headers)
 
@@ -180,7 +180,7 @@ def write_heatmap(ws, heatmap, week_start):
 
 
 def write_achievements(ws, achievements):
-    section_header(ws, "A28", "Achievements Since 01-Jun")
+    section_header(ws, "A28", "Achievements Since 28-Sep-2026")
     headers = ["Metric", "Winner", "Value"]
     write_header_row(ws, 29, 1, headers)
 
@@ -197,7 +197,7 @@ def write_achievements(ws, achievements):
 
 
 def write_recent_runs(ws, recent_runs):
-    section_header(ws, "F28", "Recent Activities Since 01-Jun")
+    section_header(ws, "F28", "Recent Activities Since 28-Sep-2026")
     headers = ["Date", "Runner", "Activity", "Distance", "Pace", "Elev", "HR"]
     write_header_row(ws, 29, 6, headers)
 

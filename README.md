@@ -1,4 +1,4 @@
-# 🏃 360 Long Runners - Automated Strava Dashboard
+# 🏃 The Ultra Syndicate - Automated Strava Dashboard
 
 <div align="center">
 
@@ -17,7 +17,7 @@ An automated Strava reporting platform that synchronizes club activities, genera
 
 # 📖 Overview
 
-360 Long Runners Dashboard is an end-to-end automation platform built for running clubs.
+The Ultra Syndicate Dashboard is an end-to-end automation platform built for running clubs.
 
 Every day the system:
 
@@ -445,7 +445,7 @@ Feel free to fork the repository and submit a Pull Request.
 
 # ❤️ Acknowledgements
 
-Built for the **360 Long Runners** community to make club statistics, reporting and motivation fully automated.
+Built for **The Ultra Syndicate** community to make club statistics, reporting and motivation fully automated.
 
 ---
 

@@ -1,6 +1,9 @@
 from collections import defaultdict
 from datetime import datetime, time, timedelta, timezone
+from pathlib import Path
 import re
+
+import yaml
 
 from models import Activity, Athlete
 
@@ -19,19 +22,15 @@ def to_utc_naive_from_ist(dt_ist):
     return dt_ist.replace(tzinfo=IST).astimezone(timezone.utc).replace(tzinfo=None)
 
 
-REPORT_START_MONTH = 6
-REPORT_START_DAY = 1
+CONFIG_FILE = Path(__file__).with_name("config.yaml")
+with CONFIG_FILE.open("r", encoding="utf-8") as config_file:
+    APP_CONFIG = yaml.safe_load(config_file)
+
+REPORT_START_DATE = datetime.strptime(APP_CONFIG["report"]["start_date"], "%Y-%m-%d")
 
 
 def get_report_start_date(reference_date=None):
-    reference_date = reference_date or datetime.now()
-    return datetime.combine(
-        reference_date.replace(
-            month=REPORT_START_MONTH,
-            day=REPORT_START_DAY,
-        ).date(),
-        time.min,
-    )
+    return REPORT_START_DATE
 
 
 def get_current_week_start(reference_date=None):
@@ -185,7 +184,10 @@ def get_activities(athlete_id=None, start_date=None, end_date=None):
 
 
 def filtered_activity_query(athlete_id=None, start_date=None, end_date=None):
-    start_date = start_date or get_report_start_date()
+    report_start_utc = to_utc_naive_from_ist(get_report_start_date())
+    if start_date is None or start_date < report_start_utc:
+        start_date = report_start_utc
+
     query = Activity.query
 
     if athlete_id is not None:

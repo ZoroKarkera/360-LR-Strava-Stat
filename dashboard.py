@@ -100,7 +100,7 @@ def render_dashboard(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>360 Long Runners Dashboard</title>
+  <title>The Ultra Syndicate Dashboard</title>
   <style>
     :root {{
       color-scheme: light;
@@ -389,7 +389,7 @@ def render_dashboard(
   <main>
     <header>
       <div>
-        <h1>360 Long Runners</h1>
+        <h1>The Ultra Syndicate</h1>
         <p>Strava data from {escape(date_range)}</p>
         <p class="generated">Last updated: {generated_at}</p>
       </div>
@@ -404,7 +404,7 @@ def render_dashboard(
 
     <section class="grid equal">
       <div>
-        <h2>Leaderboard Since 01-Jun</h2>
+        <h2>Leaderboard Since 28-Sep-2026</h2>
         {leaderboard_table(leaderboard)}
       </div>
       <div>
@@ -415,11 +415,11 @@ def render_dashboard(
 
     <section class="grid">
       <div>
-        <h2>Achievements Since 01-Jun</h2>
+        <h2>Achievements Since 28-Sep-2026</h2>
         {achievements_table(achievements, achievers)}
       </div>
       <div>
-        <h2>Recent Activities Since 01-Jun</h2>
+        <h2>Recent Activities Since 28-Sep-2026</h2>
         {recent_runs_table(recent_runs)}
       </div>
     </section>

@@ -16,7 +16,7 @@ load_dotenv()
 # Parse command line arguments
 # -------------------------------------------------
 parser = argparse.ArgumentParser(
-    description="360 Long Runners - Strava Authorization Server"
+    description="The Ultra Syndicate - Strava Authorization Server"
 )
 
 parser.add_argument(
@@ -49,7 +49,7 @@ def home():
         auth_app = "Default (settings/strava_apps.yml)"
 
     return f"""
-    <h1>🏃 360 Long Runners</h1>
+    <h1>🏃 The Ultra Syndicate</h1>
 
     <p><b>Authorization App:</b> {auth_app}</p>
 
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     override = os.getenv("AUTHORIZATION_APP_OVERRIDE")
 
     print("=" * 60)
-    print("360 Long Runners - Authorization Server")
+    print("The Ultra Syndicate - Authorization Server")
 
     if override:
         print(f"Authorization App : {override} (Command Line Override)")
