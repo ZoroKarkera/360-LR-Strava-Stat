@@ -113,7 +113,7 @@ def write_summary(ws, summary):
 
 
 def write_leaderboard(ws, leaderboard):
-    section_header(ws, "A9", "Leaderboard Since 28-Sep-2026")
+    section_header(ws, "A9", "Leaderboard")
     headers = ["Rank", "Runner", "Distance", "Runs"]
     write_header_row(ws, 10, 1, headers)
 
@@ -201,7 +201,7 @@ def write_heatmap(ws, heatmap, week_start):
 
 
 def write_achievements(ws, achievements):
-    section_header(ws, "A28", "Achievements Since 28-Sep-2026")
+    section_header(ws, "A28", "Achievements")
     headers = ["Metric", "Winner", "Value"]
     write_header_row(ws, 29, 1, headers)
 
@@ -218,7 +218,7 @@ def write_achievements(ws, achievements):
 
 
 def write_recent_runs(ws, recent_runs):
-    section_header(ws, "F28", "Recent Activities Since 28-Sep-2026")
+    section_header(ws, "F28", "Recent Activities")
     headers = ["Date", "Runner", "Activity", "Distance", "Pace", "Elev", "HR"]
     write_header_row(ws, 29, 6, headers)
 

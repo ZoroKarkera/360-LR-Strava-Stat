@@ -46,8 +46,8 @@ def generate_dashboard(filename=None, target_cw=None):
     output_path = filename or os.path.join(REPORT_DIR, HTML_FILE)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    report_start = get_report_start_date()
     week_start = get_week_start_for_cw(target_cw)
+    report_start = get_report_start_date(reference_date=week_start)
     week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
     query_start = to_utc_naive_from_ist(report_start)
@@ -404,7 +404,7 @@ def render_dashboard(
 
     <section class="grid equal">
       <div>
-        <h2>Leaderboard Since 28-Sep-2026</h2>
+        <h2>Leaderboard</h2>
         {leaderboard_table(leaderboard)}
       </div>
       <div>
@@ -415,11 +415,11 @@ def render_dashboard(
 
     <section class="grid">
       <div>
-        <h2>Achievements Since 28-Sep-2026</h2>
+        <h2>Achievements</h2>
         {achievements_table(achievements, achievers)}
       </div>
       <div>
-        <h2>Recent Activities Since 28-Sep-2026</h2>
+        <h2>Recent Activities</h2>
         {recent_runs_table(recent_runs)}
       </div>
     </section>

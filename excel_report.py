@@ -46,8 +46,8 @@ def generate_excel(filename=None, target_cw=None):
     ws.title = "The Ultra Syndicate"
     ws.sheet_view.showGridLines = False
 
-    report_start = get_report_start_date()
     week_start = get_week_start_for_cw(target_cw)
+    report_start = get_report_start_date(reference_date=week_start)
     week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
     query_start = to_utc_naive_from_ist(report_start)
@@ -120,7 +120,7 @@ def write_summary(ws, summary):
 
 
 def write_leaderboard(ws, leaderboard):
-    section_header(ws, "A9", "Leaderboard Since 28-Sep-2026")
+    section_header(ws, "A9", "Leaderboard")
     headers = ["Rank", "Runner", "Distance", "Runs"]
     write_header_row(ws, 10, 1, headers)
 
@@ -180,7 +180,7 @@ def write_heatmap(ws, heatmap, week_start):
 
 
 def write_achievements(ws, achievements):
-    section_header(ws, "A28", "Achievements Since 28-Sep-2026")
+    section_header(ws, "A28", "Achievements")
     headers = ["Metric", "Winner", "Value"]
     write_header_row(ws, 29, 1, headers)
 
@@ -197,7 +197,7 @@ def write_achievements(ws, achievements):
 
 
 def write_recent_runs(ws, recent_runs):
-    section_header(ws, "F28", "Recent Activities Since 28-Sep-2026")
+    section_header(ws, "F28", "Recent Activities")
     headers = ["Date", "Runner", "Activity", "Distance", "Pace", "Elev", "HR"]
     write_header_row(ws, 29, 6, headers)
 

@@ -30,6 +30,12 @@ REPORT_START_DATE = datetime.strptime(APP_CONFIG["report"]["start_date"], "%Y-%m
 
 
 def get_report_start_date(reference_date=None):
+    reference_date = reference_date or datetime.now()
+    if reference_date.date() < REPORT_START_DATE.date():
+        return datetime.combine(
+            reference_date.replace(month=6, day=1).date(),
+            time.min,
+        )
     return REPORT_START_DATE
 
 
@@ -184,7 +190,10 @@ def get_activities(athlete_id=None, start_date=None, end_date=None):
 
 
 def filtered_activity_query(athlete_id=None, start_date=None, end_date=None):
-    report_start_utc = to_utc_naive_from_ist(get_report_start_date())
+    reference_date = to_ist(end_date) if end_date is not None else None
+    report_start_utc = to_utc_naive_from_ist(
+        get_report_start_date(reference_date=reference_date)
+    )
     if start_date is None or start_date < report_start_utc:
         start_date = report_start_utc
 
